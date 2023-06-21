@@ -1,0 +1,13 @@
+Working towards the goal
+
+1.
+underscore all dates of format dd/mm/yyyy as red if that token exist by itself within
+that line. Then write a test for it
+
+2. 
+Detect todos and create a data structure of date + list of todos
+
+3.  Highlight todos 
+
+
+
