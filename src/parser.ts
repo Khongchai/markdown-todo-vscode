@@ -21,16 +21,15 @@ export const enum Token {
   lineEnd,
 }
 
-export interface HighlightSettings {
-  errorIfLessThanDays: number;
-  infoIfLessThanDays: number;
-  warningIfLessThanDays: number;
-  hintIfLessThanDays: number;
+export interface DaySettings {
+  critical: number;
+  deadlineApproaching: number;
+  shouldProbablyBeginWorkingOnThis: number;
 }
 
 // TODO once it works, refactor parser into a sepraate entity.
 export class DiagnosticsParser {
-  private readonly _settings: HighlightSettings;
+  private readonly _settings: DaySettings;
   private _today: Date;
 
   /**
@@ -50,81 +49,160 @@ export class DiagnosticsParser {
       this._isDigit,
     ],
     dateStringLength: "xx/xx/xxxx".length,
+    lineStartOffset: 0,
+    line: 0,
+    pos: 0,
     text: "",
   };
 
-  constructor({
-    settings,
-    today,
-  }: {
-    settings?: HighlightSettings;
-    today?: Date;
-  }) {
+  constructor({ settings, today }: { settings?: DaySettings; today?: Date }) {
     this._today = today ?? new Date();
     this._settings = settings ?? {
-      errorIfLessThanDays: 2,
-      warningIfLessThanDays: 4,
-      infoIfLessThanDays: 6,
-      hintIfLessThanDays: 8,
+      critical: 2,
+      deadlineApproaching: 4,
+      shouldProbablyBeginWorkingOnThis: 7,
     };
   }
 
+  /**
+   * Parses for new diagnostics + update the date.
+   */
   parse(text: string): Diagnostic[] {
     const diagnostics: Diagnostic[] = [];
     this._today = new Date();
 
-    let line = 0;
+    let line = -1; // should this be a part of the tokenizer or the parser?
 
     for (const token of this.tokenize(text)) {
       switch (token) {
         case Token.date:
+          const date = this._getDate(this._tokenizerInfo.text);
+          const diagnostic = this._checkDiagnosticSeverity(date);
+          if (diagnostic) {
+            diagnostics.push({
+              message: diagnostic.message,
+              severity: diagnostic.sev,
+              // date string should always end on one line.
+              range: new Range(
+                line,
+                this._tokenizerInfo.pos - this._tokenizerInfo.lineStartOffset,
+                line,
+                this._tokenizerInfo.text.length
+              ),
+            });
+          }
           continue;
         case Token.newLine:
+        case Token.lineEnd:
           continue;
       }
-      line++;
     }
 
     return diagnostics;
   }
 
-  *tokenize(s: string): Generator<Token> {
-    let pos = 0;
+  private _getDate(dateString: string): Date {
+    const [dd, mm, yyyy] = dateString.split("/");
+    const _dd = parseInt(dd);
+    const _mm = parseInt(mm);
+    const _yyyy = parseInt(yyyy);
+    const date = new Date(_yyyy, _mm, _dd);
+    if (!date.valueOf()) {
+      // TODO throw parsing error, invalid date.
+    }
 
-    while (pos < s.length) {
-      if (s.charCodeAt(pos) === CharacterCodes.lineFeed) {
-        pos++;
+    if (_dd > 31) {
+      // TODO Throw invalid day
+    }
+
+    // month starts at 0
+    if (_mm > 11) {
+      // throw error invalid month (throw at the correct spot)
+    }
+
+    if (_yyyy < this._today.getFullYear()) {
+      // throw error time traveller from the past!
+    }
+
+    return date;
+  }
+
+  private _checkDiagnosticSeverity(
+    date: Date
+  ): { sev: DiagnosticSeverity; message: string } | null {
+    const diff = this._today.getTime() - date.getTime();
+    const diffDays = diff / 1000 / 60 / 60 / 24;
+    const { critical, deadlineApproaching, shouldProbablyBeginWorkingOnThis } =
+      this._settings;
+    if (diffDays < 0) {
+      return {
+        sev: DiagnosticSeverity.Error,
+        message: "This is overdue!",
+      };
+    }
+    if (diffDays < critical) {
+      return {
+        sev: DiagnosticSeverity.Warning,
+        message: "Today's the deadline!",
+      };
+    }
+    if (diffDays < deadlineApproaching) {
+      return {
+        sev: DiagnosticSeverity.Information,
+        message: "The deadline is approaching.",
+      };
+    }
+    if (diffDays < shouldProbablyBeginWorkingOnThis) {
+      return {
+        sev: DiagnosticSeverity.Hint,
+        message: "If you haven't already, start working on this.",
+      };
+    }
+
+    return null;
+  }
+
+  *tokenize(s: string): Generator<Token> {
+    while (this._tokenizerInfo.pos < s.length) {
+      if (s.charCodeAt(this._tokenizerInfo.pos) === CharacterCodes.lineFeed) {
+        this._tokenizerInfo.line++;
+        this._tokenizerInfo.lineStartOffset = this._tokenizerInfo.pos;
+        this._tokenizerInfo.pos++;
         yield Token.newLine;
       }
 
       // validate the date.
-      if (this._isDigit(s.charCodeAt(pos))) {
-        pos++; // we can now skip the first validator.
+      if (this._isDigit(s.charCodeAt(this._tokenizerInfo.pos))) {
+        this._tokenizerInfo.pos++; // we can now skip the first validator.
         let matches = 1;
         let i = 1;
-        let text = s.charAt(pos);
+        let text = s.charAt(this._tokenizerInfo.pos);
         while (matches !== this._tokenizerInfo.dateValidator.length) {
-          if (this._isLineBreak(s.charCodeAt(pos))) {
+          if (this._isLineBreak(s.charCodeAt(this._tokenizerInfo.pos))) {
             break;
           }
 
           // matches
-          if (this._tokenizerInfo.dateValidator[i](s.charCodeAt(pos))) {
+          if (
+            this._tokenizerInfo.dateValidator[i](
+              s.charCodeAt(this._tokenizerInfo.pos)
+            )
+          ) {
             matches++;
             i++;
-            text += s[pos];
+            text += s[this._tokenizerInfo.pos];
           } else {
             break;
           }
 
-          pos++;
+          this._tokenizerInfo.pos++;
         }
 
         this._tokenizerInfo.text = text;
         yield Token.date;
       }
 
-      pos++;
+      this._tokenizerInfo.pos++;
     }
 
     return Token.lineEnd;

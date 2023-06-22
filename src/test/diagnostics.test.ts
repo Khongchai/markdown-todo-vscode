@@ -7,10 +7,10 @@ describe("Parser returns the expected diagnostics", () => {
   const parser = new DiagnosticsParser({
     today: controlledDate,
     settings: {
-      errorIfLessThanDays: 2,
+      critical: 2,
       hintIfLessThanDays: 2,
-      infoIfLessThanDays: 2,
-      warningIfLessThanDays: 2,
+      deadlineApproaching: 2,
+      shouldProbablyBeginWorkingOnThis: 2,
     },
   });
 
