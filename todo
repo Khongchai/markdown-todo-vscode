@@ -1,5 +1,7 @@
 Working towards the goal
 
+Less than 2 days mark as error. less than 4 mark as warning. less than 6 mark as informmation. (in the long run, should be configurable at the top of the markdown file)
+
 1.
 underscore all dates of format dd/mm/yyyy as red if that token exist by itself within
 that line. Then write a test for it
