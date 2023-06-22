@@ -1,4 +1,5 @@
 import { Diagnostic, DiagnosticSeverity, Range, TextDocument } from "vscode";
+import { CharacterCodes } from "./constants";
 
 export interface TODOSection {
   date: ParsedDate;
@@ -14,23 +15,53 @@ export interface ParsedTodo {
   range: Range;
 }
 
-export interface ParserSettings {
+export const enum Token {
+  newLine,
+  date,
+  lineEnd,
+}
+
+export interface HighlightSettings {
   errorIfLessThanDays: number;
   infoIfLessThanDays: number;
   warningIfLessThanDays: number;
   hintIfLessThanDays: number;
 }
 
+// TODO once it works, refactor parser into a sepraate entity.
 export class DiagnosticsParser {
-  private readonly settings: ParserSettings;
+  private readonly _settings: HighlightSettings;
+  private _today: Date;
 
   /**
-   * Reusable diagnostics array.
+   * Temp object so that we can refactor tokenizer out easier.
    */
-  private diagnostics: Diagnostic[] = [];
+  private readonly _tokenizerInfo = {
+    dateValidator: [
+      this._isDigit,
+      this._isDigit,
+      this._isSlash,
+      this._isDigit,
+      this._isDigit,
+      this._isSlash,
+      this._isDigit,
+      this._isDigit,
+      this._isDigit,
+      this._isDigit,
+    ],
+    dateStringLength: "xx/xx/xxxx".length,
+    text: "",
+  };
 
-  constructor({ settings }: { settings?: ParserSettings }) {
-    this.settings = settings ?? {
+  constructor({
+    settings,
+    today,
+  }: {
+    settings?: HighlightSettings;
+    today?: Date;
+  }) {
+    this._today = today ?? new Date();
+    this._settings = settings ?? {
       errorIfLessThanDays: 2,
       warningIfLessThanDays: 4,
       infoIfLessThanDays: 6,
@@ -38,13 +69,78 @@ export class DiagnosticsParser {
     };
   }
 
-  parse(document: TextDocument): Diagnostic[] {
-    const lineLength = document.lineAt(0).text.length;
-    const range = new Range(0, 0, 0, lineLength);
-    this.diagnostics.push(
-      new Diagnostic(range, "test message", DiagnosticSeverity.Error)
-    );
+  parse(text: string): Diagnostic[] {
+    const diagnostics: Diagnostic[] = [];
+    this._today = new Date();
 
-    return this.diagnostics;
+    let line = 0;
+
+    for (const token of this.tokenize(text)) {
+      switch (token) {
+        case Token.date:
+          continue;
+        case Token.newLine:
+          continue;
+      }
+      line++;
+    }
+
+    return diagnostics;
+  }
+
+  *tokenize(s: string): Generator<Token> {
+    let pos = 0;
+
+    while (pos < s.length) {
+      if (s.charCodeAt(pos) === CharacterCodes.lineFeed) {
+        pos++;
+        yield Token.newLine;
+      }
+
+      // validate the date.
+      if (this._isDigit(s.charCodeAt(pos))) {
+        pos++; // we can now skip the first validator.
+        let matches = 1;
+        let i = 1;
+        let text = s.charAt(pos);
+        while (matches !== this._tokenizerInfo.dateValidator.length) {
+          if (this._isLineBreak(s.charCodeAt(pos))) {
+            break;
+          }
+
+          // matches
+          if (this._tokenizerInfo.dateValidator[i](s.charCodeAt(pos))) {
+            matches++;
+            i++;
+            text += s[pos];
+          } else {
+            break;
+          }
+
+          pos++;
+        }
+
+        this._tokenizerInfo.text = text;
+        yield Token.date;
+      }
+
+      pos++;
+    }
+
+    return Token.lineEnd;
+  }
+
+  _isDigit(ch: number): boolean {
+    return ch >= CharacterCodes._0 && ch <= CharacterCodes._9;
+  }
+
+  _isSlash(ch: number): boolean {
+    return ch === CharacterCodes.slash;
+  }
+
+  _isLineBreak(ch: number): boolean {
+    return (
+      ch === CharacterCodes.lineFeed || ch === CharacterCodes.carriageReturn
+    );
   }
 }

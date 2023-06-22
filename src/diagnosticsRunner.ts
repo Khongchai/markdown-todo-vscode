@@ -1,10 +1,4 @@
-import {
-  Diagnostic,
-  DiagnosticCollection,
-  DiagnosticSeverity,
-  Range,
-  TextDocument,
-} from "vscode";
+import { DiagnosticCollection, TextDocument } from "vscode";
 import { DiagnosticsParser } from "./parser";
 
 interface DiagnosticsRunner {
@@ -16,10 +10,10 @@ const parser = new DiagnosticsParser({});
 
 export function createDiagnosticsRunner(
   diagnosticsCollection: DiagnosticCollection
-) {
+): DiagnosticsRunner {
   // Main entry point.
   function update(document: TextDocument) {
-    diagnosticsCollection.set(document.uri, parser.parse(document));
+    diagnosticsCollection.set(document.uri, parser.parse(document.getText()));
   }
 
   function deleteDocument(document: TextDocument) {
