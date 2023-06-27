@@ -1,16 +1,14 @@
-import { describe, test } from "node:test";
-import { DiagnosticsParser } from "../parser";
-import { Diagnostic, DiagnosticSeverity, Position, Range } from "vscode";
+import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
+import { DiagnosticsParser } from "../src/parser";
 
 describe("Parser returns the expected diagnostics", () => {
-  const controlledDate = new Date(1997, 08, 1);
+  const controlledDate = new Date(1997, 8, 1); // my bd :p
   const parser = new DiagnosticsParser({
     today: controlledDate,
-    settings: {
+    daySettings: {
       critical: 2,
-      hintIfLessThanDays: 2,
-      deadlineApproaching: 2,
-      shouldProbablyBeginWorkingOnThis: 2,
+      deadlineApproaching: 4,
+      shouldProbablyBeginWorkingOnThis: 6,
     },
   });
 
@@ -28,8 +26,9 @@ describe("Parser returns the expected diagnostics", () => {
 
     const actual = parser.parse(input);
 
-    expect(expected.length).toBe(actual.length);
-    expect(expected[0]).toBe(actual[0]);
+    expect(actual.length).toBe(expected.length);
+    expect(actual[0].severity).toBe(expected[0].severity);
+    expect(actual[0].range).toStrictEqual(expected[0].range);
   });
 
   test("parses single date: deadline", () => {

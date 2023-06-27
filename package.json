@@ -25,7 +25,8 @@
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
 		"lint": "eslint \"src/**/*.ts\"",
-		"watch": "tsc -watch -p ./"
+		"watch": "tsc -watch -p ./",
+		"test": "jest"
 	},
 	"devDependencies": {
 		"@types/jest": "^29.5.2",

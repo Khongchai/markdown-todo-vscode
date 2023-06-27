@@ -1,4 +1,4 @@
-import { Diagnostic, DiagnosticSeverity, Range, TextDocument } from "vscode";
+import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
 import { CharacterCodes } from "./constants";
 
 export interface TODOSection {
@@ -31,6 +31,7 @@ export interface DaySettings {
 export class DiagnosticsParser {
   private readonly _settings: DaySettings;
   private _today: Date;
+  private _isUsingControllledDate: boolean;
 
   /**
    * Temp object so that we can refactor tokenizer out easier.
@@ -55,8 +56,15 @@ export class DiagnosticsParser {
     text: "",
   };
 
-  constructor({ settings, today }: { settings?: DaySettings; today?: Date }) {
+  constructor({
+    daySettings: settings,
+    today,
+  }: {
+    daySettings?: DaySettings;
+    today?: Date;
+  }) {
     this._today = today ?? new Date();
+    this._isUsingControllledDate = !!today;
     this._settings = settings ?? {
       critical: 2,
       deadlineApproaching: 4,
@@ -69,7 +77,9 @@ export class DiagnosticsParser {
    */
   parse(text: string): Diagnostic[] {
     const diagnostics: Diagnostic[] = [];
-    this._today = new Date();
+    if (!this._isUsingControllledDate) {
+      this._today = new Date();
+    }
 
     let line = -1; // should this be a part of the tokenizer or the parser?
 
@@ -173,10 +183,9 @@ export class DiagnosticsParser {
 
       // validate the date.
       if (this._isDigit(s.charCodeAt(this._tokenizerInfo.pos))) {
-        this._tokenizerInfo.pos++; // we can now skip the first validator.
         let matches = 1;
         let i = 1;
-        let text = s.charAt(this._tokenizerInfo.pos);
+        let text = s.charAt(this._tokenizerInfo.pos++);
         while (matches !== this._tokenizerInfo.dateValidator.length) {
           if (this._isLineBreak(s.charCodeAt(this._tokenizerInfo.pos))) {
             break;
