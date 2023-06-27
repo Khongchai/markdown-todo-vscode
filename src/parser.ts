@@ -1,5 +1,6 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
 import { CharacterCodes } from "./constants";
+import DateUtil from "./utils";
 
 export interface TODOSection {
   date: ParsedDate;
@@ -28,6 +29,13 @@ export interface DaySettings {
 }
 
 // TODO once it works, refactor parser into a sepraate entity.
+
+/**
+ * To prevent confusion, Date in string xx/xx/xxxx format is assumed to have its month
+ * starting at 1, like normal people.
+ *
+ * The Date object itself can be weird and have its month starting at 00
+ */
 export class DiagnosticsParser {
   private readonly _settings: DaySettings;
   private _today: Date;
@@ -54,6 +62,12 @@ export class DiagnosticsParser {
     line: 0,
     pos: 0,
     text: "",
+    reset: function () {
+      this.lineStartOffset = 0;
+      this.line = 0;
+      this.pos = 0;
+      this.text = "";
+    },
   };
 
   constructor({
@@ -63,7 +77,7 @@ export class DiagnosticsParser {
     daySettings?: DaySettings;
     today?: Date;
   }) {
-    this._today = today ?? new Date();
+    this._today = today ?? DateUtil.getDate();
     this._isUsingControllledDate = !!today;
     this._settings = settings ?? {
       critical: 2,
@@ -76,12 +90,12 @@ export class DiagnosticsParser {
    * Parses for new diagnostics + update the date.
    */
   parse(text: string): Diagnostic[] {
+    this._tokenizerInfo.reset();
+
     const diagnostics: Diagnostic[] = [];
     if (!this._isUsingControllledDate) {
-      this._today = new Date();
+      this._today = DateUtil.getDate();
     }
-
-    let line = -1; // should this be a part of the tokenizer or the parser?
 
     for (const token of this.tokenize(text)) {
       switch (token) {
@@ -89,16 +103,16 @@ export class DiagnosticsParser {
           const date = this._getDate(this._tokenizerInfo.text);
           const diagnostic = this._checkDiagnosticSeverity(date);
           if (diagnostic) {
+            const range = new Range(
+              this._tokenizerInfo.line,
+              this._tokenizerInfo.pos - this._tokenizerInfo.text.length,
+              this._tokenizerInfo.line,
+              this._tokenizerInfo.pos
+            );
             diagnostics.push({
+              range,
               message: diagnostic.message,
               severity: diagnostic.sev,
-              // date string should always end on one line.
-              range: new Range(
-                line,
-                this._tokenizerInfo.pos - this._tokenizerInfo.lineStartOffset,
-                line,
-                this._tokenizerInfo.text.length
-              ),
             });
           }
           continue;
@@ -116,7 +130,7 @@ export class DiagnosticsParser {
     const _dd = parseInt(dd);
     const _mm = parseInt(mm);
     const _yyyy = parseInt(yyyy);
-    const date = new Date(_yyyy, _mm, _dd);
+    const date = DateUtil.getDateLikeNormalPeople(_yyyy, _mm, _dd);
     if (!date.valueOf()) {
       // TODO throw parsing error, invalid date.
     }
@@ -140,7 +154,7 @@ export class DiagnosticsParser {
   private _checkDiagnosticSeverity(
     date: Date
   ): { sev: DiagnosticSeverity; message: string } | null {
-    const diff = this._today.getTime() - date.getTime();
+    const diff = date.getTime() - this._today.getTime();
     const diffDays = diff / 1000 / 60 / 60 / 24;
     const { critical, deadlineApproaching, shouldProbablyBeginWorkingOnThis } =
       this._settings;
@@ -153,7 +167,7 @@ export class DiagnosticsParser {
     if (diffDays < critical) {
       return {
         sev: DiagnosticSeverity.Warning,
-        message: "Today's the deadline!",
+        message: `Deadline is only like ${Math.ceil(diffDays)} days away!`,
       };
     }
     if (diffDays < deadlineApproaching) {
