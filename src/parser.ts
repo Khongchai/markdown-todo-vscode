@@ -58,12 +58,12 @@ export class DiagnosticsParser {
       this._isDigit,
     ],
     dateStringLength: "xx/xx/xxxx".length,
-    lineStartOffset: 0,
+    lineOffset: 0,
     line: 0,
     pos: 0,
     text: "",
     reset: function () {
-      this.lineStartOffset = 0;
+      this.lineOffset = 0;
       this.line = 0;
       this.pos = 0;
       this.text = "";
@@ -105,9 +105,9 @@ export class DiagnosticsParser {
           if (diagnostic) {
             const range = new Range(
               this._tokenizerInfo.line,
-              this._tokenizerInfo.pos - this._tokenizerInfo.text.length,
+              this._tokenizerInfo.lineOffset - this._tokenizerInfo.text.length,
               this._tokenizerInfo.line,
-              this._tokenizerInfo.pos
+              this._tokenizerInfo.lineOffset
             );
             diagnostics.push({
               range,
@@ -190,16 +190,19 @@ export class DiagnosticsParser {
     while (this._tokenizerInfo.pos < s.length) {
       if (s.charCodeAt(this._tokenizerInfo.pos) === CharacterCodes.lineFeed) {
         this._tokenizerInfo.line++;
-        this._tokenizerInfo.lineStartOffset = this._tokenizerInfo.pos;
+        this._tokenizerInfo.lineOffset = 0;
         this._tokenizerInfo.pos++;
+        this._tokenizerInfo.text = "\n";
         yield Token.newLine;
       }
 
       // validate the date.
       if (this._isDigit(s.charCodeAt(this._tokenizerInfo.pos))) {
+        this._tokenizerInfo.pos++;
+        this._tokenizerInfo.lineOffset++;
         let matches = 1;
         let i = 1;
-        let text = s.charAt(this._tokenizerInfo.pos++);
+        let text = s.charAt(this._tokenizerInfo.pos);
         while (matches !== this._tokenizerInfo.dateValidator.length) {
           if (this._isLineBreak(s.charCodeAt(this._tokenizerInfo.pos))) {
             break;
@@ -219,6 +222,7 @@ export class DiagnosticsParser {
           }
 
           this._tokenizerInfo.pos++;
+          this._tokenizerInfo.lineOffset++;
         }
 
         this._tokenizerInfo.text = text;
@@ -226,6 +230,7 @@ export class DiagnosticsParser {
       }
 
       this._tokenizerInfo.pos++;
+      this._tokenizerInfo.lineOffset++;
     }
 
     return Token.lineEnd;
