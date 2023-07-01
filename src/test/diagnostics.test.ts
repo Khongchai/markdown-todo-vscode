@@ -1,5 +1,5 @@
 import { DiagnosticSeverity, Range } from "vscode";
-import { DiagnosticsParser } from "../parser";
+import { DiagnosticsParser } from "../parsingService/parser";
 import DateUtil from "../utils";
 
 const controlledToday = DateUtil.getDateLikeNormalPeople(1997, 8, 1); // my bd :p

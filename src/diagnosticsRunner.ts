@@ -1,5 +1,5 @@
 import { DiagnosticCollection, TextDocument } from "vscode";
-import { DiagnosticsParser } from "./parser";
+import { DiagnosticsParser } from "./parsingService/parser";
 
 interface DiagnosticsRunner {
   update(document: TextDocument): void;
