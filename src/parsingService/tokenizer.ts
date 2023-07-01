@@ -98,7 +98,7 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
       }
     }
 
-    return Token.lineEnd;
+    yield Token.lineEnd;
   }
 
   /**
@@ -169,20 +169,19 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
       text += s[this._pos];
     }
 
-    let atLeastOneMoreChar = false;
+    let prevPos = this._pos;
 
     while (
       !this._isLineBreak(s.charCodeAt(this._pos)) &&
       this._pos < s.length
     ) {
-      atLeastOneMoreChar = s.charCodeAt(this._pos) !== CharacterCodes.space;
       text += s[this._pos];
       this._pos++;
       this._lineOffset++;
     }
 
     // It's not a valid markdown list item if there's no text after the [x]
-    if (!atLeastOneMoreChar) {
+    if (this._pos <= prevPos) {
       return null;
     }
 
