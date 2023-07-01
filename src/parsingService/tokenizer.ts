@@ -27,14 +27,16 @@ abstract class DeclarativeValidator {
 
   /**
    * TODO profile this as well.
+   *
+   * Validate if a sequence of char is - [ ]
    */
-  protected readonly _todoValidator: CharValidator[] = [
+  protected readonly _todoStartLineValidator: CharValidator[] = [
     (ch) => ch === CharacterCodes.dash,
     (ch) => ch === CharacterCodes.space,
-    (ch) => ch === CharacterCodes.openBrace,
+    (ch) => ch === CharacterCodes.openBracket,
     (ch) =>
       [CharacterCodes.x, CharacterCodes.X, CharacterCodes.space].includes(ch),
-    (ch) => ch === CharacterCodes.closeBrace,
+    (ch) => ch === CharacterCodes.closeBracket,
   ];
 
   protected _isDigit(ch: number): boolean {
@@ -82,8 +84,8 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
       }
 
       // Might be a todo item
-      else if (s.charCodeAt(this._pos) === CharacterCodes.dash) {
-        const result = this._handleTodo(s);
+      else if (this._todoStartLineValidator[0](s.charCodeAt(this._pos))) {
+        const result = this._handleTodoItem(s);
         if (result) {
           yield result;
         }
@@ -131,14 +133,16 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
     let text = s[this._pos]; // first validator can be skipped
     this._pos++;
     this._lineOffset++;
-    for (let i = 1; i < this._dateValidator.length; i++) {
+    for (
+      let i = 1;
+      i < this._dateValidator.length;
+      i++, this._pos++, this._lineOffset++
+    ) {
       if (!this._dateValidator[i](s.charCodeAt(this._pos))) {
         return null;
       }
 
       text += s[this._pos];
-      this._pos++;
-      this._lineOffset++;
     }
 
     this._text = text;
@@ -149,16 +153,40 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
    * @param s the string to be parsed
    * @returns Token.todoItem if the string is a todo item, null otherwise
    */
-  private _handleTodo(s: string): Token.todoItem | null {
-    for (let i = 0; i < this._todoValidator.length; i++) {
-      if (!this._todoValidator[i](s.charCodeAt(this._pos + i))) {
+  private _handleTodoItem(s: string): Token.todoItem | null {
+    let text = s[this._pos]; // skip the first character.
+    this._pos++;
+    this._lineOffset++;
+    for (
+      let i = 1;
+      i < this._todoStartLineValidator.length;
+      i++, this._pos++, this._lineOffset++
+    ) {
+      if (!this._todoStartLineValidator[i](s.charCodeAt(this._pos))) {
         return null;
       }
 
+      text += s[this._pos];
+    }
+
+    let atLeastOneMoreChar = false;
+
+    while (
+      !this._isLineBreak(s.charCodeAt(this._pos)) &&
+      this._pos < s.length
+    ) {
+      atLeastOneMoreChar = s.charCodeAt(this._pos) !== CharacterCodes.space;
+      text += s[this._pos];
       this._pos++;
       this._lineOffset++;
     }
 
+    // It's not a valid markdown list item if there's no text after the [x]
+    if (!atLeastOneMoreChar) {
+      return null;
+    }
+
+    this._text = text;
     return Token.todoItem;
   }
 

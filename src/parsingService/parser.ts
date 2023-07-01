@@ -44,23 +44,20 @@ export class DiagnosticsParser {
       this._today = DateUtil.getDate();
     }
 
-    let todoSection: TODOSection | null = null;
+    let todoSections: TODOSection[] = [];
     for (const token of this._tokenizer.tokenize(text)) {
       switch (token) {
-        // TODO refactor this.
         case Token.date:
-          // TODO refactor this.
           const date = this._getDate(this._tokenizer.getText());
           const diagnosticToReport = this._checkDiagnosticSeverity(date);
 
-          todoSection ??= new TODOSection();
+          const currentSection = new TODOSection(diagnosticToReport);
+          todoSections.push(currentSection);
 
           if (!diagnosticToReport) {
-            todoSection.setDiagnostic(null);
             continue;
           }
 
-          todoSection.setDiagnostic(diagnosticToReport);
           const range = new Range(
             this._tokenizer.getLine(),
             this._tokenizer.getLineOffset() - this._tokenizer.getText().length,
@@ -75,8 +72,9 @@ export class DiagnosticsParser {
 
           continue;
         case Token.todoItem:
-          if (todoSection) {
-            todoSection.setTodoItem(
+          // We need to check if we're inside of a date section.
+          if (todoSections.length > 0) {
+            todoSections[todoSections.length - 1].addTodoItem(
               this._tokenizer.getText(),
               this._tokenizer.getLine()
             );
@@ -84,12 +82,12 @@ export class DiagnosticsParser {
           continue;
         case Token.newLine:
         case Token.lineEnd:
-          if (todoSection && todoSection.getSeverity()) {
-            todoSection.addDiagnosticsIfAny(diagnostics);
-            todoSection.clear();
-          }
           continue;
       }
+    }
+
+    for (const section of todoSections) {
+      section.addTodoItemsDiagnostics(diagnostics);
     }
 
     return diagnostics;

@@ -13,8 +13,8 @@ export interface ReportedDiagnostic {
 export const enum Token {
   newLine,
   date,
-  lineEnd,
   todoItem,
+  lineEnd,
 }
 
 export interface DaySettings {
