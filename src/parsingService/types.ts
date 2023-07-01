@@ -1,23 +1,20 @@
-import { Range } from "vscode";
+import { DiagnosticSeverity } from "vscode";
 
-export interface TODOSection {
-  date: ParsedDate;
-  items: ParsedTodo[];
+export interface ParsedTODO {
+  content: string;
+  line: number;
 }
 
-export interface ParsedDate {
-  date: Date;
-  range: Range;
-}
-
-export interface ParsedTodo {
-  range: Range;
+export interface ReportedDiagnostic {
+  sev: DiagnosticSeverity;
+  message: string;
 }
 
 export const enum Token {
   newLine,
   date,
   lineEnd,
+  todoItem,
 }
 
 export interface DaySettings {

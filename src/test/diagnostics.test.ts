@@ -78,7 +78,7 @@ describe("Parser returns the expected diagnostics", () => {
     });
   });
 
-  test("Multiple warnings", () => {
+  test("Multiple date", () => {
     const input = [
       "30/07/1997",
       "01/08/1997",
@@ -106,6 +106,70 @@ describe("Parser returns the expected diagnostics", () => {
       },
     ]);
   });
+
+  // describe("(Integration tests) Dates with todos", () => {
+  //   const todoLine1 = "- [ ] Take out the trash";
+  //   const todoLine2 = "- [ ] Do the dishes";
+  //   test("Case 1", () => {
+  //     const input = [
+  //       "30/07/1997",
+  //       "**Description for this todo**",
+  //       todoLine1,
+  //       todoLine2,
+  //     ].join("\r\n");
+
+  //     assertResult(input, [
+  //       {
+  //         severity: DiagnosticSeverity.Error,
+  //         range: new Range(0, 0, 0, 10),
+  //       },
+  //       {
+  //         severity: DiagnosticSeverity.Error,
+  //         range: new Range(1, 0, 1, todoLine1.length),
+  //       },
+  //       {
+  //         severity: DiagnosticSeverity.Error,
+  //         range: new Range(2, 0, 2, todoLine2.length),
+  //       },
+  //     ]);
+  //   });
+
+  //   // Worry about this when the first case passes.
+  //   // test("Case 2", () => {
+  //   //   const input = [
+  //   //     // expect warning
+  //   //     "01/08/1997",
+  //   //     todoLine1,
+  //   //     todoLine2,
+  //   //     "\r\n",
+  //   //     // nothing
+  //   //     "09/09/1997",
+  //   //     todoLine1,
+  //   //     // expect overdue error
+  //   //     "30/07/1997",
+  //   //     // These should not be underlined
+  //   //     "Some explanation about this todo",
+  //   //     "Some explanation about this todo 2",
+  //   //     todoLine1,
+  //   //     todoLine2,
+  //   //   ].join("\n");
+
+  //   //   assertResult(input, [
+  //   //     {
+  //   //       range: new Range(0, 0, 0, 10),
+  //   //       severity: DiagnosticSeverity.Warning,
+  //   //     },
+  //   //     {
+  //   //       range: new Range(1, 0, 1, todoLine1.length),
+  //   //       severity: DiagnosticSeverity.Warning,
+  //   //     },
+  //   //     {
+  //   //       range: new Range(2, 0, 2, todoLine2.length),
+  //   //       severity: DiagnosticSeverity.Warning,
+  //   //     },
+  //   //   ]);
+  //   // });
+  // });
 });
 
 describe("Parser reports invalid date", () => {

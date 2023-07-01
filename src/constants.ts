@@ -82,6 +82,7 @@ export const enum CharacterCodes {
   openBracket = 0x5b, // [
   plus = 0x2b, // +
   slash = 0x2f, // /
+  dash = 0x2d, // -
 
   formFeed = 0x0c, // \f
   tab = 0x09, // \t

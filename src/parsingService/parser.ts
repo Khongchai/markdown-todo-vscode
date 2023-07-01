@@ -1,8 +1,8 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
-import { CharacterCodes } from "../constants";
 import DateUtil from "../utils";
-import { DaySettings, Token } from "./types";
 import { DiagnosticsTokenizer } from "./tokenizer";
+import { DaySettings, ReportedDiagnostic, Token } from "./types";
+import { TODOSection } from "../todoSection";
 
 /**
  * To prevent confusion, Date in string xx/xx/xxxx format is assumed to have its month
@@ -44,28 +44,50 @@ export class DiagnosticsParser {
       this._today = DateUtil.getDate();
     }
 
+    let todoSection: TODOSection | null = null;
     for (const token of this._tokenizer.tokenize(text)) {
       switch (token) {
+        // TODO refactor this.
         case Token.date:
+          // TODO refactor this.
           const date = this._getDate(this._tokenizer.getText());
-          const diagnostic = this._checkDiagnosticSeverity(date);
-          if (diagnostic) {
-            const range = new Range(
-              this._tokenizer.getLine(),
-              this._tokenizer.getLineOffset() -
-                this._tokenizer.getText().length,
-              this._tokenizer.getLine(),
-              this._tokenizer.getLineOffset()
+          const diagnosticToReport = this._checkDiagnosticSeverity(date);
+
+          todoSection ??= new TODOSection();
+
+          if (!diagnosticToReport) {
+            todoSection.setDiagnostic(null);
+            continue;
+          }
+
+          todoSection.setDiagnostic(diagnosticToReport);
+          const range = new Range(
+            this._tokenizer.getLine(),
+            this._tokenizer.getLineOffset() - this._tokenizer.getText().length,
+            this._tokenizer.getLine(),
+            this._tokenizer.getLineOffset()
+          );
+          diagnostics.push({
+            range,
+            message: diagnosticToReport.message,
+            severity: diagnosticToReport.sev,
+          });
+
+          continue;
+        case Token.todoItem:
+          if (todoSection) {
+            todoSection.setTodoItem(
+              this._tokenizer.getText(),
+              this._tokenizer.getLine()
             );
-            diagnostics.push({
-              range,
-              message: diagnostic.message,
-              severity: diagnostic.sev,
-            });
           }
           continue;
         case Token.newLine:
         case Token.lineEnd:
+          if (todoSection && todoSection.getSeverity()) {
+            todoSection.addDiagnosticsIfAny(diagnostics);
+            todoSection.clear();
+          }
           continue;
       }
     }
@@ -99,9 +121,7 @@ export class DiagnosticsParser {
     return date;
   }
 
-  private _checkDiagnosticSeverity(
-    date: Date
-  ): { sev: DiagnosticSeverity; message: string } | null {
+  private _checkDiagnosticSeverity(date: Date): ReportedDiagnostic | null {
     const diff = date.getTime() - this._today.getTime();
     const diffDays = Math.floor(diff / 1000 / 60 / 60 / 24);
     const { critical, deadlineApproaching, shouldProbablyBeginWorkingOnThis } =
