@@ -188,16 +188,26 @@ export class DiagnosticsParser {
 
   *tokenize(s: string): Generator<Token> {
     while (this._tokenizerInfo.pos < s.length) {
-      if (s.charCodeAt(this._tokenizerInfo.pos) === CharacterCodes.lineFeed) {
+      const code = s.charCodeAt(this._tokenizerInfo.pos);
+      if (this._isLineBreak(code)) {
         this._tokenizerInfo.line++;
         this._tokenizerInfo.lineOffset = 0;
         this._tokenizerInfo.pos++;
-        this._tokenizerInfo.text = "\n";
+        this._tokenizerInfo.text = s[this._tokenizerInfo.pos];
+
+        if (
+          code === CharacterCodes.carriageReturn &&
+          s.charCodeAt(this._tokenizerInfo.pos) === CharacterCodes.lineFeed
+        ) {
+          this._tokenizerInfo.pos++;
+          this._tokenizerInfo.text += "\n";
+        }
+
         yield Token.newLine;
       }
 
       // validate the date.
-      if (this._isDigit(s.charCodeAt(this._tokenizerInfo.pos))) {
+      else if (this._isDigit(s.charCodeAt(this._tokenizerInfo.pos))) {
         this._tokenizerInfo.pos++;
         this._tokenizerInfo.lineOffset++;
         let matches = 1;
@@ -229,8 +239,11 @@ export class DiagnosticsParser {
         yield Token.date;
       }
 
-      this._tokenizerInfo.pos++;
-      this._tokenizerInfo.lineOffset++;
+      // other
+      else {
+        this._tokenizerInfo.pos++;
+        this._tokenizerInfo.lineOffset++;
+      }
     }
 
     return Token.lineEnd;

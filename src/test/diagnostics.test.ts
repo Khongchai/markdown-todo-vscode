@@ -2,81 +2,80 @@ import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
 import { DiagnosticsParser } from "../parser";
 import DateUtil from "../utils";
 
+const controlledToday = DateUtil.getDateLikeNormalPeople(1997, 8, 1); // my bd :p
+const parser = new DiagnosticsParser({
+  today: controlledToday,
+  daySettings: {
+    critical: 2,
+    deadlineApproaching: 4,
+    shouldProbablyBeginWorkingOnThis: 6,
+  },
+});
+
+function assertResult(
+  input: string,
+  expected: { severity: DiagnosticSeverity; range: Range }[]
+) {
+  const actual = parser.parse(input);
+
+  expect(actual.length).toBe(expected.length);
+
+  for (let i = 0; i < actual.length; i++) {
+    try {
+      expect(actual.length).toBe(expected.length);
+      expect(actual[i].severity).toBe(expected[i].severity);
+      expect(actual[i].range).toStrictEqual(expected[i].range);
+    } catch (e) {
+      console.info("input: \n", input);
+      console.info(
+        `actual: ${JSON.stringify(actual[i].range)}, expected: ${JSON.stringify(
+          expected[i].range
+        )}`
+      );
+      throw e;
+    }
+  }
+}
+
 describe("Parser returns the expected diagnostics", () => {
-  const controlledToday = DateUtil.getDateLikeNormalPeople(1997, 8, 1); // my bd :p
-  const parser = new DiagnosticsParser({
-    today: controlledToday,
-    daySettings: {
-      critical: 2,
-      deadlineApproaching: 4,
-      shouldProbablyBeginWorkingOnThis: 6,
-    },
-  });
+  describe("Overdue", () => {
+    test("Single date", () => {
+      const input = ["01/06/1997"].join("\n");
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(0, 0, 0, 10),
+        },
+      ]);
+    });
 
-  test("parses single date: overdue", () => {
-    // TODO @khongchai refactor
-    const input = ["01/06/1997"].join("\n");
+    test("Single date with some texts", () => {
+      const input = ["some random text 01/06/1997"].join("\n");
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(0, 17, 0, 27),
+        },
+      ]);
+    });
 
-    const expected: Diagnostic[] = [
-      {
-        message: "",
-        severity: DiagnosticSeverity.Error,
-        range: new Range(0, 0, 0, 10),
-      },
-    ];
-
-    const actual = parser.parse(input);
-
-    expect(actual.length).toBe(expected.length);
-    expect(actual[0].severity).toBe(expected[0].severity);
-    expect(actual[0].range).toStrictEqual(expected[0].range);
-  });
-
-  // TODO @khongchai enable this test case
-  // test("parses single date: overdue", () => {
-  //   // TODO @khongchai refactor
-  //   const input = ["some random text 01/06/1997"].join("\n");
-
-  //   const expected: Diagnostic[] = [
-  //     {
-  //       message: "",
-  //       severity: DiagnosticSeverity.Error,
-  //       range: new Range(0, 0, 0, 10),
-  //     },
-  //   ];
-
-  // TODO @khongchai enable this test case
-  // test("parses multiple date: overdue", () => {
-  //   // TODO @khongchai refactor
-  //   const input = ["01/01/1997", "01/01/1997", "01/01/1997"].join("\n");
-
-  //   const expected: Diagnostic[] = [
-  //     {
-  //       message: "",
-  //       severity: DiagnosticSeverity.Error,
-  //       range: new Range(0, 0, 0, 10),
-  //     },
-  //   ];
-
-  //   const actual = parser.parse(input);
-
-  //   expect(actual.length).toBe(expected.length);
-  //   expect(actual[0].severity).toBe(expected[0].severity);
-  //   expect(actual[0].range).toStrictEqual(expected[0].range);
-  // });
-
-  test("parses single date: valid date", () => {
-    const input = ["01/09/1997"].join("\n");
-
-    const expected: Diagnostic[] = [];
-
-    const actual = parser.parse(input);
-
-    expect(actual.length).toBe(expected.length);
-  });
-
-  test("parses single date: deadline", () => {
-    const input = ["02/08/1997"].join("\n");
+    test("Multiple dates", () => {
+      const input = ["", "01/01/1997", "01/01/1997", "01/01/1997"].join("\n");
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(1, 0, 1, 10),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(2, 0, 2, 10),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(3, 0, 3, 10),
+        },
+      ]);
+    });
   });
 });
 
