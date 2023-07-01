@@ -1,4 +1,4 @@
-import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
+import { DiagnosticSeverity, Range } from "vscode";
 import { DiagnosticsParser } from "../parser";
 import DateUtil from "../utils";
 
@@ -76,6 +76,35 @@ describe("Parser returns the expected diagnostics", () => {
         },
       ]);
     });
+  });
+
+  test("Multiple warnings", () => {
+    const input = [
+      "30/07/1997",
+      "01/08/1997",
+      "03/08/1997",
+      "05/08/1997",
+      "07/08/1997",
+    ].join("\n");
+
+    assertResult(input, [
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(0, 0, 0, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Warning,
+        range: new Range(1, 0, 1, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Information,
+        range: new Range(2, 0, 2, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Hint,
+        range: new Range(3, 0, 3, 10),
+      },
+    ]);
   });
 });
 

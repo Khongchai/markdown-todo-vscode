@@ -8,6 +8,7 @@ export default class DateUtil {
   }
 
   static getDate() {
-    return new Date();
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), today.getDate());
   }
 }

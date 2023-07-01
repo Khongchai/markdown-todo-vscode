@@ -155,7 +155,7 @@ export class DiagnosticsParser {
     date: Date
   ): { sev: DiagnosticSeverity; message: string } | null {
     const diff = date.getTime() - this._today.getTime();
-    const diffDays = diff / 1000 / 60 / 60 / 24;
+    const diffDays = Math.floor(diff / 1000 / 60 / 60 / 24);
     const { critical, deadlineApproaching, shouldProbablyBeginWorkingOnThis } =
       this._settings;
     if (diffDays < 0) {
@@ -167,7 +167,7 @@ export class DiagnosticsParser {
     if (diffDays < critical) {
       return {
         sev: DiagnosticSeverity.Warning,
-        message: `Deadline is only like ${Math.ceil(diffDays)} days away!`,
+        message: `Deadline is only like ${diffDays} days away!`,
       };
     }
     if (diffDays < deadlineApproaching) {
@@ -208,11 +208,11 @@ export class DiagnosticsParser {
 
       // validate the date.
       else if (this._isDigit(s.charCodeAt(this._tokenizerInfo.pos))) {
+        let text = s.charAt(this._tokenizerInfo.pos); // get the first character of the date
         this._tokenizerInfo.pos++;
         this._tokenizerInfo.lineOffset++;
         let matches = 1;
         let i = 1;
-        let text = s.charAt(this._tokenizerInfo.pos);
         while (matches !== this._tokenizerInfo.dateValidator.length) {
           if (this._isLineBreak(s.charCodeAt(this._tokenizerInfo.pos))) {
             break;
