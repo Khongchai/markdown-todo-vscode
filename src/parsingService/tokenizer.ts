@@ -74,7 +74,7 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
       }
 
       // Might be a date
-      else if (this._isDigit(s.charCodeAt(this._pos))) {
+      else if (this._dateValidator[0](s.charCodeAt(this._pos))) {
         const result = this._handleDate(s);
         if (result) {
           yield result;
@@ -83,7 +83,7 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
 
       // Might be a todo item
       else if (s.charCodeAt(this._pos) === CharacterCodes.dash) {
-        const result = this._handleDash(s);
+        const result = this._handleTodo(s);
         if (result) {
           yield result;
         }
@@ -128,43 +128,28 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
    * @returns Token.date if the string is a date, null otherwise
    */
   private _handleDate(s: string): Token.date | null {
-    let text = s.charAt(this._pos); // get the first character of the date
+    let text = s[this._pos]; // first validator can be skipped
     this._pos++;
     this._lineOffset++;
-    let matches = 1;
-    let i = 1;
-    while (matches !== this._dateValidator.length) {
-      if (this._isLineBreak(s.charCodeAt(this._pos))) {
-        break;
+    for (let i = 1; i < this._dateValidator.length; i++) {
+      if (!this._dateValidator[i](s.charCodeAt(this._pos))) {
+        return null;
       }
 
-      // matches
-      if (this._dateValidator[i](s.charCodeAt(this._pos))) {
-        matches++;
-        i++;
-        text += s[this._pos];
-      } else {
-        // doesn't match
-        break;
-      }
-
+      text += s[this._pos];
       this._pos++;
       this._lineOffset++;
     }
 
-    if (matches === this._dateValidator.length) {
-      this._text = text;
-      return Token.date;
-    }
-
-    return null;
+    this._text = text;
+    return Token.date;
   }
 
   /**
    * @param s the string to be parsed
    * @returns Token.todoItem if the string is a todo item, null otherwise
    */
-  private _handleDash(s: string): Token.todoItem | null {
+  private _handleTodo(s: string): Token.todoItem | null {
     for (let i = 0; i < this._todoValidator.length; i++) {
       if (!this._todoValidator[i](s.charCodeAt(this._pos + i))) {
         return null;
