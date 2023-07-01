@@ -132,26 +132,26 @@ describe("Parser returns the expected diagnostics", () => {
       ]);
     });
 
-    // test("Case 2: TODO Delimits by text: recognize only consecutive todos", () => {
-    //   const input = [
-    //     "30/07/1997",
-    //     "random stuff",
-    //     todoLine1,
-    //     "random stuff",
-    //     todoLine2,
-    //   ].join("\n");
+    test("Case 2: TODO Delimits by text: recognize only consecutive todos", () => {
+      const input = [
+        "30/07/1997",
+        "random stuff",
+        todoLine1,
+        "random stuff",
+        todoLine2, // this should not be recognized
+      ].join("\n");
 
-    //   assertResult(input, [
-    //     {
-    //       severity: DiagnosticSeverity.Error,
-    //       range: new Range(0, 0, 0, 10),
-    //     },
-    //     {
-    //       severity: DiagnosticSeverity.Error,
-    //       range: new Range(2, 0, 2, todoLine1.length),
-    //     },
-    //   ]);
-    // });
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(0, 0, 0, 10),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(2, 0, 2, todoLine1.length),
+        },
+      ]);
+    });
 
     // Worry about this when the first case passes.
     // test("Case 2", () => {
