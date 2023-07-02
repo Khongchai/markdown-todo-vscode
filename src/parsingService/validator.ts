@@ -36,6 +36,7 @@ export abstract class DeclarativeValidator {
     (ch) =>
       [CharacterCodes.x, CharacterCodes.X, CharacterCodes.space].includes(ch),
     (ch) => ch === CharacterCodes.closeBracket,
+    (ch) => ch === CharacterCodes.space,
   ];
 
   protected readonly _markdownCommentStartValidator: CharValidator[] = [

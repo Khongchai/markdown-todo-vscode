@@ -136,7 +136,7 @@ describe("Parser returns the expected diagnostics", () => {
         "random stuff",
         todoLine2, // this should not be recognized
         todoLine2, // neither should this
-      ].join("\n");
+      ].join("\r\n");
 
       assertResult(input, [
         {

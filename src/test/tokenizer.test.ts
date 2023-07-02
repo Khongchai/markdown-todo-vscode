@@ -22,6 +22,11 @@ describe("Match list tokens", () => {
   test(case3, () => runTest(case3, [Token.todoItem, Token.lineEnd]));
 });
 
+describe("Invalid list tokens", () => {
+  const case1 = "- [ ]Hello, world!";
+  test(case1, () => runTest(case1, [Token.lineEnd]));
+});
+
 describe("Match section end", () => {
   test("single", () =>
     runTest("<!-- end section -->", [Token.sectionEnd, Token.lineEnd]));
