@@ -4,6 +4,30 @@ import { DiagnosticsTokenizer } from "./tokenizer";
 import { DaySettings, ReportedDiagnostic, Token } from "./types";
 import { TODOSection } from "../todoSection";
 
+// TODO @khongchai refactor logic into visitor the visitor pattern (onSectionStart, onSectionEnd, onNewLine, etc.).
+
+/**
+ * States of the current parser.
+ */
+interface _ParsingState {
+  todoSections: TODOSection[];
+  /**
+   * true if the parser is currently parsing a todo item.
+   *
+   * For example,
+   *
+   * 01/01/2021
+   * - [ ] todo item
+   * # Some heading
+   * - [ ] another todo item
+   *
+   * isParsingTodoItem is true when parsing the first todo item, and false when parsing the second todo item.
+   *
+   * This is because the second todo item is not directly under the date.
+   */
+  isParsingTodoSectionItem: boolean;
+}
+
 /**
  * To prevent confusion, Date in string xx/xx/xxxx format is assumed to have its month
  * starting at 1, like normal people.
@@ -43,12 +67,18 @@ export class DiagnosticsParser {
       this._today = DateUtil.getDate();
     }
 
-    let todoSections: TODOSection[] = [];
+    const state: _ParsingState = {
+      isParsingTodoSectionItem: false,
+      todoSections: [],
+    };
+
     for (const token of this._tokenizer.tokenize(text)) {
       switch (token) {
         case Token.date: {
-          if (todoSections.length > 0) {
-            const prevSection = todoSections[todoSections.length - 1];
+          // Check for duplicate dates on the same line.
+          if (state.todoSections.length > 0) {
+            const prevSection =
+              state.todoSections[state.todoSections.length - 1];
             // Allow just one date per line. Ignore the rest on the same line, if any.
             if (prevSection.getLine() === this._tokenizer.getLine()) {
               const range = this._getRange();
@@ -60,6 +90,8 @@ export class DiagnosticsParser {
               continue;
             }
           }
+
+          // All good, add the date.
           const date = this._getDate(this._tokenizer.getText());
           const diagnosticToReport = this._checkDiagnosticSeverity(date);
 
@@ -67,7 +99,9 @@ export class DiagnosticsParser {
             diagnosticToReport,
             this._tokenizer.getLine()
           );
-          todoSections.push(currentSection);
+
+          state.todoSections.push(currentSection);
+          state.isParsingTodoSectionItem = true;
 
           if (!diagnosticToReport) {
             continue;
@@ -84,8 +118,8 @@ export class DiagnosticsParser {
         }
         case Token.todoItem:
           // We need to check if we're inside of a date section.
-          if (todoSections.length > 0) {
-            todoSections[todoSections.length - 1].addTodoItem(
+          if (state.todoSections.length > 0 && state.isParsingTodoSectionItem) {
+            state.todoSections[state.todoSections.length - 1].addTodoItem(
               this._tokenizer.getText(),
               this._tokenizer.getLine()
             );
@@ -94,10 +128,12 @@ export class DiagnosticsParser {
         case Token.newLine:
         case Token.lineEnd:
           continue;
+        case Token.sectionEnd:
+          state.isParsingTodoSectionItem = false;
       }
     }
 
-    for (const section of todoSections) {
+    for (const section of state.todoSections) {
       section.addTodoItemsDiagnostics(diagnostics);
     }
 

@@ -1,58 +1,6 @@
 import { CharacterCodes } from "../constants";
 import { Token } from "./types";
-
-/**
- * TODO validators might actually be overkill and regex might just be better.
- */
-type CharValidator = (ch: number) => boolean;
-
-abstract class DeclarativeValidator {
-  /**
-   * For declaratively validate the date.
-   *
-   * TODO profile against regex, maybe it's not actually that slow.
-   */
-  protected readonly _dateValidator: CharValidator[] = [
-    this._isDigit,
-    this._isDigit,
-    this._isSlash,
-    this._isDigit,
-    this._isDigit,
-    this._isSlash,
-    this._isDigit,
-    this._isDigit,
-    this._isDigit,
-    this._isDigit,
-  ];
-
-  /**
-   * TODO profile this as well.
-   *
-   * Validate if a sequence of char is - [ ]
-   */
-  protected readonly _todoStartLineValidator: CharValidator[] = [
-    (ch) => ch === CharacterCodes.dash,
-    (ch) => ch === CharacterCodes.space,
-    (ch) => ch === CharacterCodes.openBracket,
-    (ch) =>
-      [CharacterCodes.x, CharacterCodes.X, CharacterCodes.space].includes(ch),
-    (ch) => ch === CharacterCodes.closeBracket,
-  ];
-
-  protected _isDigit(ch: number): boolean {
-    return ch >= CharacterCodes._0 && ch <= CharacterCodes._9;
-  }
-
-  protected _isSlash(ch: number): boolean {
-    return ch === CharacterCodes.slash;
-  }
-
-  protected _isLineBreak(ch: number): boolean {
-    return (
-      ch === CharacterCodes.lineFeed || ch === CharacterCodes.carriageReturn
-    );
-  }
-}
+import { DeclarativeValidator } from "./validator";
 
 export class DiagnosticsTokenizer extends DeclarativeValidator {
   private _lineOffset: number;
@@ -86,6 +34,16 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
       // Might be a todo item
       else if (this._todoStartLineValidator[0](s.charCodeAt(this._pos))) {
         const result = this._handleTodoItem(s);
+        if (result) {
+          yield result;
+        }
+      }
+
+      // Are we closing off a section?
+      else if (
+        this._markdownCommentStartValidator[0](s.charCodeAt(this._pos))
+      ) {
+        const result = this._handleSectionEnd(s);
         if (result) {
           yield result;
         }
@@ -180,6 +138,57 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
 
     this._text = text;
     return Token.todoItem;
+  }
+
+  /**
+   *
+   * @param s the string to be parsed
+   * @returns Token.sectionEnd if the string is a section end, null otherwise
+   */
+  private _handleSectionEnd(s: string): Token.sectionEnd | null {
+    let text = s[this._pos];
+    this._pos++;
+    this._lineOffset++;
+
+    // TODO refactor for less copy-and-pasting
+    for (
+      let i = 1;
+      i < this._markdownCommentStartValidator.length;
+      i++, this._pos++, this._lineOffset++
+    ) {
+      if (!this._markdownCommentStartValidator[i](s.charCodeAt(this._pos))) {
+        return null;
+      }
+
+      text += s[this._pos];
+    }
+
+    for (
+      let i = 0;
+      i < this.endSectionText.length;
+      i++, this._pos++, this._lineOffset++
+    ) {
+      if (this.endSectionText[i] !== s[this._pos]) {
+        return null;
+      }
+
+      text += s[this._pos];
+    }
+
+    for (
+      let i = 0;
+      i < this._markdownCommentEndValidator.length;
+      i++, this._pos++, this._lineOffset++
+    ) {
+      if (!this._markdownCommentEndValidator[i](s.charCodeAt(this._pos))) {
+        return null;
+      }
+
+      text += s[this._pos];
+    }
+
+    this._text = text;
+    return Token.sectionEnd;
   }
 
   /**

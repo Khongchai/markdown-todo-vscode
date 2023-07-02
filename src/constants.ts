@@ -75,14 +75,17 @@ export const enum CharacterCodes {
   closeBracket = 0x5d, // ]
   colon = 0x3a, // :
   comma = 0x2c, // ,
+  dash = 0x2d, // -
   dot = 0x2e, // .
   doubleQuote = 0x22, // "
+  exclamationMark = 0x21, // !
+  greaterThan = 0x3e, // >
+  lessThan = 0x3c, // <
   minus = 0x2d, // -
   openBrace = 0x7b, // {
   openBracket = 0x5b, // [
   plus = 0x2b, // +
   slash = 0x2f, // /
-  dash = 0x2d, // -
 
   formFeed = 0x0c, // \f
   tab = 0x09, // \t

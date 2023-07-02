@@ -1,29 +1,28 @@
 import { DiagnosticsTokenizer } from "../parsingService/tokenizer";
 import { Token } from "../parsingService/types";
 
-// TODO refactor the test into a more readable format.
-describe("Tokenizer", () => {
-  describe("Recognize todo", () => {
-    const case1 = "- [ ] Hello, world!";
-    test(case1, () => {
-      const tokenizer = new DiagnosticsTokenizer();
-      const resultingTokens = [];
-      for (const token of tokenizer.tokenize(case1)) {
-        resultingTokens.push(token);
-      }
+function runTest(s: string, expectedTokens: Token[]) {
+  const tokenizer = new DiagnosticsTokenizer();
+  const resultingTokens = [];
+  for (const token of tokenizer.tokenize(s)) {
+    resultingTokens.push(token);
+  }
 
-      expect(resultingTokens).toStrictEqual([Token.todoItem, Token.lineEnd]);
-    });
+  expect(resultingTokens).toStrictEqual(expectedTokens);
+}
 
-    const case2 = "- [ ] Hello, world! ";
-    test(case2, () => {
-      const tokenizer = new DiagnosticsTokenizer();
-      const resultingTokens = [];
-      for (const token of tokenizer.tokenize(case2)) {
-        resultingTokens.push(token);
-      }
+describe("Match list tokens", () => {
+  const case1 = "- [ ] Hello, world!";
+  test(case1, () => runTest(case1, [Token.todoItem, Token.lineEnd]));
 
-      expect(resultingTokens).toStrictEqual([Token.todoItem, Token.lineEnd]);
-    });
-  });
+  const case2 = "+ [ ] Hello, world!";
+  test(case2, () => runTest(case2, [Token.todoItem, Token.lineEnd]));
+
+  const case3 = "- [ ] Hello, world! ";
+  test(case3, () => runTest(case3, [Token.todoItem, Token.lineEnd]));
+});
+
+describe("Match section end", () => {
+  test("single", () =>
+    runTest("<!-- end section -->", [Token.sectionEnd, Token.lineEnd]));
 });

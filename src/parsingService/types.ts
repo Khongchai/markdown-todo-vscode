@@ -15,10 +15,7 @@ export const enum Token {
   date,
   todoItem,
   lineEnd,
-  /**
-   * Everything else
-   */
-  other,
+  sectionEnd,
 }
 
 export interface DaySettings {
