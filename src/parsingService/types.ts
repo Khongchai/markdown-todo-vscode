@@ -24,5 +24,4 @@ export const enum Token {
 export interface DaySettings {
   critical: number;
   deadlineApproaching: number;
-  shouldProbablyBeginWorkingOnThis: number;
 }

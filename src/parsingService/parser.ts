@@ -28,7 +28,6 @@ export class DiagnosticsParser {
     this._settings = settings ?? {
       critical: 2,
       deadlineApproaching: 4,
-      shouldProbablyBeginWorkingOnThis: 7,
     };
     this._tokenizer = new DiagnosticsTokenizer();
   }
@@ -134,8 +133,7 @@ export class DiagnosticsParser {
   private _checkDiagnosticSeverity(date: Date): ReportedDiagnostic | null {
     const diff = date.getTime() - this._today.getTime();
     const diffDays = Math.floor(diff / 1000 / 60 / 60 / 24);
-    const { critical, deadlineApproaching, shouldProbablyBeginWorkingOnThis } =
-      this._settings;
+    const { critical, deadlineApproaching } = this._settings;
     if (diffDays < 0) {
       return {
         sev: DiagnosticSeverity.Error,
@@ -152,12 +150,6 @@ export class DiagnosticsParser {
       return {
         sev: DiagnosticSeverity.Information,
         message: "The deadline is approaching.",
-      };
-    }
-    if (diffDays < shouldProbablyBeginWorkingOnThis) {
-      return {
-        sev: DiagnosticSeverity.Hint,
-        message: "If you haven't already, start working on this.",
       };
     }
 

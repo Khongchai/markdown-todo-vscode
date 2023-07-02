@@ -8,7 +8,6 @@ const parser = new DiagnosticsParser({
   daySettings: {
     critical: 2,
     deadlineApproaching: 4,
-    shouldProbablyBeginWorkingOnThis: 6,
   },
 });
 
@@ -99,10 +98,6 @@ describe("Parser returns the expected diagnostics", () => {
       {
         severity: DiagnosticSeverity.Information,
         range: new Range(2, 0, 2, 10),
-      },
-      {
-        severity: DiagnosticSeverity.Hint,
-        range: new Range(3, 0, 3, 10),
       },
     ]);
   });
