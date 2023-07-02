@@ -47,23 +47,34 @@ export class DiagnosticsParser {
     let todoSections: TODOSection[] = [];
     for (const token of this._tokenizer.tokenize(text)) {
       switch (token) {
-        case Token.date:
+        case Token.date: {
+          if (todoSections.length > 0) {
+            const prevSection = todoSections[todoSections.length - 1];
+            // Allow just one date per line. Ignore the rest on the same line, if any.
+            if (prevSection.getLine() === this._tokenizer.getLine()) {
+              const range = this._getRange();
+              diagnostics.push({
+                range,
+                message: "Only one date per line is allowed.",
+                severity: DiagnosticSeverity.Hint,
+              });
+              continue;
+            }
+          }
           const date = this._getDate(this._tokenizer.getText());
           const diagnosticToReport = this._checkDiagnosticSeverity(date);
 
-          const currentSection = new TODOSection(diagnosticToReport);
+          const currentSection = new TODOSection(
+            diagnosticToReport,
+            this._tokenizer.getLine()
+          );
           todoSections.push(currentSection);
 
           if (!diagnosticToReport) {
             continue;
           }
 
-          const range = new Range(
-            this._tokenizer.getLine(),
-            this._tokenizer.getLineOffset() - this._tokenizer.getText().length,
-            this._tokenizer.getLine(),
-            this._tokenizer.getLineOffset()
-          );
+          const range = this._getRange();
           diagnostics.push({
             range,
             message: diagnosticToReport.message,
@@ -71,6 +82,7 @@ export class DiagnosticsParser {
           });
 
           continue;
+        }
         case Token.todoItem:
           // We need to check if we're inside of a date section.
           if (todoSections.length > 0) {
@@ -150,5 +162,18 @@ export class DiagnosticsParser {
     }
 
     return null;
+  }
+
+  /**
+   *
+   * @returns The range of the current `tokenizer.getText()`
+   */
+  private _getRange(): Range {
+    return new Range(
+      this._tokenizer.getLine(),
+      this._tokenizer.getLineOffset() - this._tokenizer.getText().length,
+      this._tokenizer.getLine(),
+      this._tokenizer.getLineOffset()
+    );
   }
 }

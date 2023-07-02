@@ -170,16 +170,9 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
     }
 
     let prevPos = this._pos;
-
-    while (
-      !this._isLineBreak(s.charCodeAt(this._pos)) &&
-      this._pos < s.length
-    ) {
-      text += s[this._pos];
-      this._pos++;
-      this._lineOffset++;
-    }
-
+    this._forwardCursorToNewLine(s, (c) => {
+      text += c;
+    });
     // It's not a valid markdown list item if there's no text after the [x]
     if (this._pos <= prevPos) {
       return null;
@@ -187,6 +180,27 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
 
     this._text = text;
     return Token.todoItem;
+  }
+
+  /**
+   *
+   * Will consume all characters until a new line is found.
+   *
+   * @param s the string to be parsed
+   * @param onNext called on each character until a new line is found
+   */
+  private _forwardCursorToNewLine(
+    s: string,
+    onNext?: (c: string) => void
+  ): void {
+    while (
+      !this._isLineBreak(s.charCodeAt(this._pos)) &&
+      this._pos < s.length
+    ) {
+      onNext?.(s[this._pos]);
+      this._pos++;
+      this._lineOffset++;
+    }
   }
 
   public reset(): void {

@@ -7,10 +7,12 @@ export class TODOSection {
    */
   private _sectionDiagnostics: ReportedDiagnostic | null;
   private _items: ParsedTODO[];
+  private _line: number;
 
-  constructor(sectionDiagnostics: ReportedDiagnostic | null) {
+  constructor(sectionDiagnostics: ReportedDiagnostic | null, line: number) {
     this._items = [];
     this._sectionDiagnostics = sectionDiagnostics;
+    this._line = line;
   }
 
   /**
@@ -44,5 +46,9 @@ export class TODOSection {
 
   public addTodoItem(item: string, line: number) {
     this._items.push({ content: item, line });
+  }
+
+  public getLine(): number {
+    return this._line;
   }
 }

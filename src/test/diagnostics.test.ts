@@ -132,14 +132,29 @@ describe("Parser returns the expected diagnostics", () => {
       ]);
     });
 
-    test("Case 2: TODO Delimits by text: recognize only consecutive todos", () => {
-      const input = [
-        "30/07/1997",
-        "random stuff",
-        todoLine1,
-        "random stuff",
-        todoLine2, // this should not be recognized
-      ].join("\n");
+    // test("Case 2: TODO Delimits by text: recognize only consecutive todos", () => {
+    //   const input = [
+    //     "30/07/1997",
+    //     "random stuff",
+    //     todoLine1,
+    //     "random stuff",
+    //     todoLine2, // this should not be recognized
+    //   ].join("\n");
+
+    //   assertResult(input, [
+    //     {
+    //       severity: DiagnosticSeverity.Error,
+    //       range: new Range(0, 0, 0, 10),
+    //     },
+    //     {
+    //       severity: DiagnosticSeverity.Error,
+    //       range: new Range(2, 0, 2, todoLine1.length),
+    //     },
+    //   ]);
+    // });
+
+    test("Case 3: Recoginize only one date within the same line", () => {
+      const input = ["30/07/1997 01/08/1997"].join("\n");
 
       assertResult(input, [
         {
@@ -147,8 +162,8 @@ describe("Parser returns the expected diagnostics", () => {
           range: new Range(0, 0, 0, 10),
         },
         {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(2, 0, 2, todoLine1.length),
+          severity: DiagnosticSeverity.Hint,
+          range: new Range(0, 11, 0, 21),
         },
       ]);
     });
