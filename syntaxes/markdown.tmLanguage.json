@@ -1,0 +1,32 @@
+{
+  "name": "vscode-md-productivity-extension",
+  "scopeName": "text.html.markdown.productivity",
+  "patterns": [
+    {
+      "include": "#date"
+    },
+    {
+      "include": "#section-end"
+    }
+  ],
+  "repository": {
+    "date": {
+      "patterns": [
+        {
+          "comment": "A date of the pattern dd/mm/y+ demarcates a new section. Only dd/mm/yyyy format is valid.",
+          "match": "(0[1-9]|1[0-9]|2[0-9]|3[0-1])/(0[1-9]|1[0-2])/[1-9]([0-9]+)?",
+          "name": "variable.other.constant"
+        }
+      ]
+    },
+    "section-end": {
+      "patterns": [
+        {
+          "comment": "A section end is demarcated by a line of 3 or more dashes.",
+          "match": "<!-- end section -->",
+          "name": "punctuation.definition.comment"
+        }
+      ]
+    }
+  }
+}

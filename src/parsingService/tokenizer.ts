@@ -165,10 +165,10 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
 
     for (
       let i = 0;
-      i < this.endSectionText.length;
+      i < this._endSectionText.length;
       i++, this._pos++, this._lineOffset++
     ) {
-      if (this.endSectionText[i] !== s[this._pos]) {
+      if (this._endSectionText[i] !== s[this._pos]) {
         return null;
       }
 

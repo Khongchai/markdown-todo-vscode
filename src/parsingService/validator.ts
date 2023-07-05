@@ -6,6 +6,7 @@ import { CharacterCodes } from "../constants";
 type CharValidator = (ch: number) => boolean;
 
 export abstract class DeclarativeValidator {
+  constructor() {}
   /**
    * For declaratively validate the date.
    *
@@ -46,7 +47,7 @@ export abstract class DeclarativeValidator {
     this._isDash,
   ];
 
-  protected readonly endSectionText = " end section ";
+  protected readonly _endSectionText = " end section ";
 
   protected readonly _markdownCommentEndValidator: CharValidator[] = [
     this._isDash,

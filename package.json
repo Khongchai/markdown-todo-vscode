@@ -17,6 +17,15 @@
   "activationEvents": [
     "onLanguage:markdown"
   ],
+  "contributes": {
+    "grammars": [
+      {
+        "langauge": "markdown",
+        "scopeName": "text.html.markdown.productivity",
+        "path": "./syntaxes/markdown.tmLanguage.json"
+      }
+    ]
+  },
   "main": "./out/extension.js",
   "scripts": {
     "vscode:prepublish": "npm run compile",
