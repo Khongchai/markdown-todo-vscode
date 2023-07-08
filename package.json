@@ -1,12 +1,12 @@
 {
-  "name": "vscode-md-productivity-extension",
+  "name": "markdown-todo-vscode",
   "private": true,
   "displayName": "Code Actions Provider Sample",
   "version": "0.0.2",
   "publisher": "Khongchai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Khongchai/vscode-md-productivity-extension"
+    "url": "https://github.com/Khongchai/markdown-todo-vscode.git"
   },
   "engines": {
     "vscode": "^1.73.0"
@@ -20,9 +20,11 @@
   "contributes": {
     "grammars": [
       {
-        "langauge": "markdown",
-        "scopeName": "text.html.markdown.productivity",
-        "path": "./syntaxes/markdown.tmLanguage.json"
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "scopeName": "markdown-todo",
+        "path": "./syntaxes/injection.json"
       }
     ]
   },

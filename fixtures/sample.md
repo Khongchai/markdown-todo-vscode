@@ -23,7 +23,7 @@
 - [ ] Wash the keyboard
 - [ ] Say no to plastic bags before leaving the house (loudly)
 
-**12/12/2023**
+_**12/12/2023**_
 
 - [ ] Say no to plastic bags before leaving the house (loudly)
 - [ ] Arrange your socks by their level of happiness
