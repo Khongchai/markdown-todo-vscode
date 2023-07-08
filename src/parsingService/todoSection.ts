@@ -1,5 +1,5 @@
 import { Diagnostic, Range } from "vscode";
-import { ParsedTODO, ReportedDiagnostic } from "./parsingService/types";
+import { ParsedTODO, ReportedDiagnostic } from "./types";
 
 export class TODOSection {
   /**

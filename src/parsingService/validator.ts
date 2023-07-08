@@ -1,4 +1,4 @@
-import { CharacterCodes } from "../constants";
+import { CharacterCodes } from "./constants";
 
 /**
  * TODO validators might actually be overkill and regex might just be better.

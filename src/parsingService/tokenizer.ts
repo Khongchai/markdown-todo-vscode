@@ -1,4 +1,4 @@
-import { CharacterCodes } from "../constants";
+import { CharacterCodes } from "./constants";
 import { Token } from "./types";
 import { DeclarativeValidator } from "./validator";
 

@@ -1,8 +1,9 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
-import DateUtil from "../utils";
+import DateUtil from "./utils";
 import { DiagnosticsTokenizer } from "./tokenizer";
 import { DaySettings, ReportedDiagnostic, Token } from "./types";
-import { TODOSection } from "../todoSection";
+import { TODOSection } from "./todoSection";
+import "../protoExtensions/protoExtensions";
 
 export interface ParserVisitor {
   onSectionParsed(section: TODOSection): void;
@@ -83,8 +84,7 @@ export class DiagnosticsParser {
         case Token.date: {
           // Check for duplicate dates on the same line.
           if (state.todoSections.length > 0) {
-            const prevSection =
-              state.todoSections[state.todoSections.length - 1];
+            const prevSection = state.todoSections.getLast();
             // Allow just one date per line. Ignore the rest on the same line, if any.
             if (prevSection.getLine() === this._tokenizer.getLine()) {
               const range = this._getRange();
@@ -126,19 +126,19 @@ export class DiagnosticsParser {
         case Token.todoItem:
           // We need to check if we're inside of a date section.
           if (state.todoSections.length > 0 && state.isParsingTodoSectionItem) {
-            state.todoSections[state.todoSections.length - 1].addTodoItem(
-              this._tokenizer.getText(),
-              this._tokenizer.getLine()
-            );
+            state.todoSections
+              .getLast()
+              .addTodoItem(
+                this._tokenizer.getText(),
+                this._tokenizer.getLine()
+              );
           }
           continue;
         case Token.newLine:
         case Token.lineEnd:
           continue;
         case Token.sectionEnd:
-          this._visitor?.onSectionParsed(
-            state.todoSections[state.todoSections.length - 1]
-          );
+          this._visitor?.onSectionParsed(state.todoSections.getLast());
           state.isParsingTodoSectionItem = false;
       }
     }
