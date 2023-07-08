@@ -1,13 +1,11 @@
 import * as vscode from "vscode";
-import { createDiagnosticsRunner } from "./diagnosticsRunner";
+import DiagnosticsRunnerImpl from "./diagnosticsRunner";
 
 export function activate(context: vscode.ExtensionContext) {
-  const diagnosticsCollection = vscode.languages.createDiagnosticCollection(
-    "markdown-productivity-extension"
+  const diagnosticsRunner = new DiagnosticsRunnerImpl(
+    "markdown-todo-extension",
+    context
   );
-  context.subscriptions.push(diagnosticsCollection);
-
-  const diagnosticsRunner = createDiagnosticsRunner(diagnosticsCollection);
 
   context.subscriptions.push(
     // TODO update only changes in the future?

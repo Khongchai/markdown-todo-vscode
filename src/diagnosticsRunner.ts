@@ -1,27 +1,36 @@
-import { DiagnosticCollection, TextDocument } from "vscode";
-import { DiagnosticsParser } from "./parsingService/parser";
+import * as vscode from "vscode";
+import { DiagnosticsParser, ParserVisitor } from "./parsingService/parser";
 
 interface DiagnosticsRunner {
-  update(document: TextDocument): void;
-  deleteDocument(document: TextDocument): void;
+  update(document: vscode.TextDocument): void;
+  deleteDocument(document: vscode.TextDocument): void;
 }
+export default class DiagnosticsRunnerImpl implements DiagnosticsRunner {
+  private readonly _diagnosticsCollection: vscode.DiagnosticCollection;
+  private readonly _parser: DiagnosticsParser;
 
-const parser = new DiagnosticsParser({});
+  constructor(extensionName: string, context: vscode.ExtensionContext) {
+    this._diagnosticsCollection =
+      vscode.languages.createDiagnosticCollection(extensionName);
 
-export function createDiagnosticsRunner(
-  diagnosticsCollection: DiagnosticCollection
-): DiagnosticsRunner {
-  // Main entry point.
-  function update(document: TextDocument) {
-    diagnosticsCollection.set(document.uri, parser.parse(document.getText()));
+    context.subscriptions.push(this._diagnosticsCollection);
+
+    const parserVisitor: ParserVisitor = {
+      onSectionParsed: () => {},
+    };
+    this._parser = new DiagnosticsParser({
+      visitor: parserVisitor,
+    });
   }
 
-  function deleteDocument(document: TextDocument) {
-    diagnosticsCollection.delete(document.uri);
+  public update(document: vscode.TextDocument): void {
+    this._diagnosticsCollection.set(
+      document.uri,
+      this._parser.parse(document.getText())
+    );
   }
 
-  return {
-    update,
-    deleteDocument,
-  } as DiagnosticsRunner;
+  public deleteDocument(document: vscode.TextDocument): void {
+    this._diagnosticsCollection.delete(document.uri);
+  }
 }

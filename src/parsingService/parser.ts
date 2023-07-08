@@ -4,7 +4,9 @@ import { DiagnosticsTokenizer } from "./tokenizer";
 import { DaySettings, ReportedDiagnostic, Token } from "./types";
 import { TODOSection } from "../todoSection";
 
-// TODO @khongchai refactor logic into visitor the visitor pattern (onSectionStart, onSectionEnd, onNewLine, etc.).
+export interface ParserVisitor {
+  onSectionParsed(section: TODOSection): void;
+}
 
 /**
  * States of the current parser.
@@ -39,13 +41,16 @@ export class DiagnosticsParser {
   private _today: Date;
   private _isUsingControllledDate: boolean;
   private _tokenizer: DiagnosticsTokenizer;
+  private _visitor?: ParserVisitor;
 
   constructor({
     daySettings: settings,
     today,
+    visitor,
   }: {
     daySettings?: DaySettings;
     today?: Date;
+    visitor?: ParserVisitor;
   }) {
     this._today = today ?? DateUtil.getDate();
     this._isUsingControllledDate = !!today;
@@ -54,6 +59,7 @@ export class DiagnosticsParser {
       deadlineApproaching: 4,
     };
     this._tokenizer = new DiagnosticsTokenizer();
+    this._visitor = visitor;
   }
 
   /**
@@ -97,7 +103,8 @@ export class DiagnosticsParser {
 
           const currentSection = new TODOSection(
             diagnosticToReport,
-            this._tokenizer.getLine()
+            this._tokenizer.getLine(),
+            date
           );
 
           state.todoSections.push(currentSection);
@@ -129,6 +136,9 @@ export class DiagnosticsParser {
         case Token.lineEnd:
           continue;
         case Token.sectionEnd:
+          this._visitor?.onSectionParsed(
+            state.todoSections[state.todoSections.length - 1]
+          );
           state.isParsingTodoSectionItem = false;
       }
     }

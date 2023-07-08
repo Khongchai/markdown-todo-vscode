@@ -8,11 +8,17 @@ export class TODOSection {
   private _sectionDiagnostics: ReportedDiagnostic | null;
   private _items: ParsedTODO[];
   private _line: number;
+  private _date: Date;
 
-  constructor(sectionDiagnostics: ReportedDiagnostic | null, line: number) {
+  constructor(
+    sectionDiagnostics: ReportedDiagnostic | null,
+    line: number,
+    date: Date
+  ) {
     this._items = [];
     this._sectionDiagnostics = sectionDiagnostics;
     this._line = line;
+    this._date = date;
   }
 
   /**
@@ -50,5 +56,9 @@ export class TODOSection {
 
   public getLine(): number {
     return this._line;
+  }
+
+  public getDate(): Date | null {
+    return this._date;
   }
 }
