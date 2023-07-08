@@ -11,4 +11,13 @@ export default class DateUtil {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), today.getDate());
   }
+
+  /**
+   *  Returns d1 - d2
+   */
+  static getDiffInDays(d1: Date, d2: Date): number {
+    const diff = d1.getTime() - d2.getTime();
+    const diffDays = Math.floor(diff / 1000 / 60 / 60 / 24);
+    return diffDays;
+  }
 }

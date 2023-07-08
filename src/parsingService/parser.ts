@@ -6,7 +6,7 @@ import { TODOSection } from "./todoSection";
 import "../protoExtensions/protoExtensions";
 
 export interface ParserVisitor {
-  onSectionParsed(section: TODOSection): void;
+  onNewLineAtDate(date: Date, line: number, lineEnd: number): void;
 }
 
 /**
@@ -42,16 +42,16 @@ export class DiagnosticsParser {
   private _today: Date;
   private _isUsingControllledDate: boolean;
   private _tokenizer: DiagnosticsTokenizer;
-  private _visitor?: ParserVisitor;
+  private _visitors: ParserVisitor[];
 
   constructor({
     daySettings: settings,
     today,
-    visitor,
+    visitors,
   }: {
     daySettings?: DaySettings;
     today?: Date;
-    visitor?: ParserVisitor;
+    visitors?: ParserVisitor[];
   }) {
     this._today = today ?? DateUtil.getDate();
     this._isUsingControllledDate = !!today;
@@ -60,7 +60,7 @@ export class DiagnosticsParser {
       deadlineApproaching: 4,
     };
     this._tokenizer = new DiagnosticsTokenizer();
-    this._visitor = visitor;
+    this._visitors = visitors ?? [];
   }
 
   /**
@@ -83,10 +83,12 @@ export class DiagnosticsParser {
       switch (token) {
         case Token.date: {
           // Check for duplicate dates on the same line.
-          if (state.todoSections.length > 0) {
+          if (state.todoSections.isNotEmpty()) {
             const prevSection = state.todoSections.getLast();
             // Allow just one date per line. Ignore the rest on the same line, if any.
-            if (prevSection.getLine() === this._tokenizer.getLine()) {
+            if (
+              prevSection.getTheLineDateIsOn() === this._tokenizer.getLine()
+            ) {
               const range = this._getRange();
               diagnostics.push({
                 range,
@@ -125,7 +127,11 @@ export class DiagnosticsParser {
         }
         case Token.todoItem:
           // We need to check if we're inside of a date section.
-          if (state.todoSections.length > 0 && state.isParsingTodoSectionItem) {
+          if (
+            // TODO @khongchai this condition is not needed...(maybe, check again)
+            state.todoSections.isNotEmpty() &&
+            state.isParsingTodoSectionItem
+          ) {
             state.todoSections
               .getLast()
               .addTodoItem(
@@ -136,9 +142,23 @@ export class DiagnosticsParser {
           continue;
         case Token.newLine:
         case Token.lineEnd:
+          // If we're parsing, that means we're inside of a date section.
+          if (state.todoSections.isNotEmpty()) {
+            const prevLine = this._tokenizer.getLine() - 1;
+            const justFinishedParsingDate =
+              prevLine === state.todoSections.getLast().getTheLineDateIsOn();
+            if (justFinishedParsingDate) {
+              this._visitors.forEach((v) =>
+                v.onNewLineAtDate(
+                  state.todoSections.getLast().getDate(),
+                  prevLine,
+                  this._tokenizer.getPreviousLineOffset()
+                )
+              );
+            }
+          }
           continue;
         case Token.sectionEnd:
-          this._visitor?.onSectionParsed(state.todoSections.getLast());
           state.isParsingTodoSectionItem = false;
       }
     }
@@ -177,8 +197,7 @@ export class DiagnosticsParser {
   }
 
   private _checkDiagnosticSeverity(date: Date): ReportedDiagnostic | null {
-    const diff = date.getTime() - this._today.getTime();
-    const diffDays = Math.floor(diff / 1000 / 60 / 60 / 24);
+    const diffDays = DateUtil.getDiffInDays(date, this._today);
     const { critical, deadlineApproaching } = this._settings;
     if (diffDays < 0) {
       return {

@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { DiagnosticsParser, ParserVisitor } from "./parsingService/parser";
+import textDecorationVisitor from "./parserVisitors/textDecorationVisitor";
 
 interface DiagnosticsRunner {
   update(document: vscode.TextDocument): void;
@@ -15,11 +16,8 @@ export default class DiagnosticsRunnerImpl implements DiagnosticsRunner {
 
     context.subscriptions.push(this._diagnosticsCollection);
 
-    const parserVisitor: ParserVisitor = {
-      onSectionParsed: () => {},
-    };
     this._parser = new DiagnosticsParser({
-      visitor: parserVisitor,
+      visitors: [textDecorationVisitor],
     });
   }
 

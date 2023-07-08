@@ -90,3 +90,5 @@ export const enum CharacterCodes {
   formFeed = 0x0c, // \f
   tab = 0x09, // \t
 }
+
+export const datePattern = "dd/mm/yyyy";

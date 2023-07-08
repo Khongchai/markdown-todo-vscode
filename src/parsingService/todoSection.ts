@@ -7,7 +7,7 @@ export class TODOSection {
    */
   private _sectionDiagnostics: ReportedDiagnostic | null;
   private _items: ParsedTODO[];
-  private _line: number;
+  private _theLineDateIsOn: number;
   private _date: Date;
 
   constructor(
@@ -17,7 +17,7 @@ export class TODOSection {
   ) {
     this._items = [];
     this._sectionDiagnostics = sectionDiagnostics;
-    this._line = line;
+    this._theLineDateIsOn = line;
     this._date = date;
   }
 
@@ -54,11 +54,14 @@ export class TODOSection {
     this._items.push({ content: item, line });
   }
 
-  public getLine(): number {
-    return this._line;
+  /**
+   * @returns Yeah, just to be clear - this is the line number of the date, not the todo items.
+   */
+  public getTheLineDateIsOn(): number {
+    return this._theLineDateIsOn;
   }
 
-  public getDate(): Date | null {
+  public getDate(): Date {
     return this._date;
   }
 }
