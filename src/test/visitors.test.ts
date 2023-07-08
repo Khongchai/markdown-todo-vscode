@@ -18,25 +18,28 @@ function createAssertion(
   };
 }
 
+// Refactor to handle list assertion when the need arise.
+function runTest(input: string, assertion: ReturnType<typeof createAssertion>) {
+  const parser = new DiagnosticsParser({
+    visitors: [
+      {
+        onNewLineAtDate: assertion.assert,
+      },
+    ],
+  });
+  parser.parse(input);
+
+  assertion.assertCalled();
+}
+
 describe("Visitor arguments test", () => {
   it("onNewLineAtDate", () => {
-    const assertion = createAssertion(
-      DateUtil.getDateLikeNormalPeople(1997, 6, 1),
-      0,
-      13
-    );
-
-    const parser = new DiagnosticsParser({
-      visitors: [
-        {
-          onNewLineAtDate: assertion.assert,
-        },
-      ],
-    });
     const input = ["01/06/1997   ", "hello"].join("\n");
-    parser.parse(input);
 
-    assertion.assertCalled();
+    runTest(
+      input,
+      createAssertion(DateUtil.getDateLikeNormalPeople(1997, 6, 1), 0, 13)
+    );
   });
 });
 

@@ -4,7 +4,7 @@ import DateUtil from "../parsingService/utils";
 
 const textDecorationVisitor: ParserVisitor = {
   onNewLineAtDate: (date, line, lineEnd) => {
-    const diffDate = DateUtil.getDiffInDays(new Date(), date);
+    const diffDate = DateUtil.getDiffInDays(date, new Date());
     const decorationType = vscode.window.createTextEditorDecorationType({
       after: {
         contentText: `Remaning days: ${diffDate}`,

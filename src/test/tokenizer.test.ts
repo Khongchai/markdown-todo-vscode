@@ -24,6 +24,17 @@ describe("Match list tokens", () => {
   test(case3, () => runTest(case3, [Token.todoItem, Token.lineEnd]));
 });
 
+describe("Match date tokens", () => {
+  const case1 = "01/06/1997";
+  test(case1, () => runTest(case1, [Token.date, Token.lineEnd]));
+
+  const case2 = "01/06/1997    ";
+  test(case2, () => runTest(case2, [Token.date, Token.lineEnd]));
+
+  const case3 = "01/06/1997    01/06/1997";
+  test(case3, () => runTest(case3, [Token.date, Token.date, Token.lineEnd]));
+});
+
 describe("Invalid list tokens", () => {
   const case1 = "- [ ]Hello, world!";
   test(case1, () => runTest(case1, [Token.lineEnd]));
