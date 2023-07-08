@@ -11,8 +11,6 @@ function runTest(s: string, expectedTokens: Token[]) {
   expect(resultingTokens).toStrictEqual(expectedTokens);
 }
 
-// TODO date tests + edge cases
-
 describe("Match list tokens", () => {
   const case1 = "- [ ] Hello, world!";
   test(case1, () => runTest(case1, [Token.todoItem, Token.lineEnd]));
