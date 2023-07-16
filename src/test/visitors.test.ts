@@ -1,46 +1,43 @@
-import { DiagnosticsParser } from "../parsingService/parser";
+import { DiagnosticsParser, ParserVisitor } from "../parsingService/parser";
 import DateUtil from "../parsingService/utils";
 
-function createAssertion(
-  expectedDate: Date,
-  expectedLine: number,
-  expectedLineEnd: number
-) {
-  let isCalled = false;
-  return {
-    assert: (date: Date, line: number, lineEnd: number) => {
-      isCalled = true;
-      expect(date).toStrictEqual(expectedDate);
-      expect(line).toBe(expectedLine);
-      expect(lineEnd).toBe(expectedLineEnd);
-    },
-    assertCalled: () => expect(isCalled).toBe(true),
-  };
-}
+// Modify this later when we have more visitors.
+type Expected = Parameters<ParserVisitor["onNewLineAtDate"]>;
 
-// Refactor to handle list assertion when the need arise.
-function runTest(input: string, assertion: ReturnType<typeof createAssertion>) {
+function runTest(
+  input: string,
+  // Any of the parameters of parservisitor
+  expecteds: Expected[]
+) {
+  const results: Expected[] = [];
   const parser = new DiagnosticsParser({
     visitors: [
       {
-        onNewLineAtDate: assertion.assert,
+        onNewLineAtDate: (...args) => {
+          results.push(args);
+        },
       },
     ],
   });
   parser.parse(input);
 
-  assertion.assertCalled();
+  expect(results.length).toBe(expecteds.length);
+  expect(results).toStrictEqual(expecteds);
 }
 
-describe("Visitor arguments test", () => {
-  it("onNewLineAtDate", () => {
+describe("onNewLineAtDate", () => {
+  it("tests a single date", () => {
     const input = ["01/06/1997   ", "hello"].join("\n");
 
-    runTest(
-      input,
-      createAssertion(DateUtil.getDateLikeNormalPeople(1997, 6, 1), 0, 13)
-    );
+    runTest(input, [[DateUtil.getDateLikeNormalPeople(1997, 6, 1), 0, 13]]);
+  });
+
+  it("tests multiple dates", () => {
+    const input = ["01/06/1997   ", "hello", "31/12/1997"].join("\n");
+
+    runTest(input, [
+      [DateUtil.getDateLikeNormalPeople(1997, 6, 1), 0, 13],
+      [DateUtil.getDateLikeNormalPeople(1997, 12, 31), 2, 13],
+    ]);
   });
 });
-
-describe("Decoration visitor test", () => {});

@@ -5,8 +5,20 @@ import { DaySettings, ReportedDiagnostic, Token } from "./types";
 import { TODOSection } from "./todoSection";
 import "../protoExtensions/protoExtensions";
 
-export interface ParserVisitor {
+type FunctionMap = {
+  [K in string]: ((...args: any) => any) | undefined;
+};
+
+export interface ParserVisitor extends FunctionMap {
+  /**
+   *
+   * @param date A date object representing the date that was parsed. This object is recreated on every parse.
+   * @param line
+   * @param lineEnd
+   */
   onNewLineAtDate(date: Date, line: number, lineEnd: number): void;
+  onParseBegin?(): void;
+  onParseEnd?(): void;
 }
 
 /**
@@ -67,6 +79,8 @@ export class DiagnosticsParser {
    * Parses for new diagnostics + update the date.
    */
   parse(text: string): Diagnostic[] {
+    this._visitors.forEach((v) => v.onParseBegin?.());
+
     this._tokenizer.reset();
 
     const diagnostics: Diagnostic[] = [];
@@ -141,7 +155,6 @@ export class DiagnosticsParser {
           }
           continue;
         case Token.newLine:
-        case Token.lineEnd:
           // If we're parsing, that means we're inside of a date section.
           if (state.todoSections.isNotEmpty()) {
             const prevLine = this._tokenizer.getLine() - 1;
@@ -158,6 +171,8 @@ export class DiagnosticsParser {
             }
           }
           continue;
+        case Token.lineEnd:
+          continue;
         case Token.sectionEnd:
           state.isParsingTodoSectionItem = false;
       }
@@ -167,6 +182,7 @@ export class DiagnosticsParser {
       section.addTodoItemsDiagnostics(diagnostics);
     }
 
+    this._visitors.forEach((v) => v.onParseEnd?.());
     return diagnostics;
   }
 

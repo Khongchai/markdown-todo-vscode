@@ -144,7 +144,7 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
       text += s[this._cursor.pos];
     }
 
-    let prevPos = this._cursor.pos;
+    const prevPos = this._cursor.pos;
     this._forwardCursorToNewLine(s, (c) => {
       text += c;
     });
