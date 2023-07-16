@@ -34,7 +34,8 @@
     "compile": "tsc -p ./",
     "lint": "eslint \"src/**/*.ts\"",
     "watch": "tsc -watch -p ./",
-    "test": "jest"
+    "test": "jest",
+    "test-coverage": "jest --coverage"
   },
   "devDependencies": {
     "@types/jest": "^29.5.2",
