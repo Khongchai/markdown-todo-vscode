@@ -6,19 +6,19 @@ const decorationMap: Record<string, vscode.TextEditorDecorationType> = {};
 
 function addDecoration(...args: Parameters<DateParsedEvent>) {
   const [date, line, lineEnd] = args satisfies [Date, number, number];
-  const diffDate = DateUtil.getDiffInDays(date, new Date());
+  const diffDays = DateUtil.getDiffInDays(date, DateUtil.getDate());
 
   // There can only be one date per line, so we're safe.
   if (!decorationMap[line]) {
-    const isPastDateline = diffDate < 0;
     const decoration = vscode.window.createTextEditorDecorationType({
       after: {
-        color: isPastDateline ? "#ff6961d9" : "#77dd77a9",
+        color: "#637777",
         fontStyle: "italic",
         margin: "0 0 0 3em",
-        contentText: isPastDateline
-          ? `Days past dateline: ${Math.abs(diffDate)}`
-          : `Remaining days: ${diffDate}`,
+        contentText:
+          diffDays < 0
+            ? `Days past dateline: ${Math.abs(diffDays)}`
+            : `Remaining days: ${diffDays}`,
       },
     });
     decorationMap[line] = decoration;

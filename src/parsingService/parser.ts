@@ -248,7 +248,7 @@ export class DiagnosticsParser {
     if (diffDays < critical) {
       return {
         sev: DiagnosticSeverity.Warning,
-        message: `Deadline is only like ${diffDays} days away!`,
+        message: `You should do this soon!`,
       };
     }
     if (diffDays < deadlineApproaching) {
