@@ -156,11 +156,7 @@ export class DiagnosticsParser {
         }
         case Token.todoItem:
           // We need to check if we're inside of a date section.
-          if (
-            // TODO @khongchai this condition is not needed...(maybe, check again)
-            state.todoSections.isNotEmpty() &&
-            state.isParsingTodoSectionItem
-          ) {
+          if (state.isParsingTodoSectionItem) {
             state.todoSections
               .getLast()
               .addTodoItem(
@@ -170,7 +166,6 @@ export class DiagnosticsParser {
           }
           continue;
         case Token.newLine:
-          // If we're parsing, that means we're inside of a date section.
           if (state.todoSections.isNotEmpty()) {
             const prevLine = this._tokenizer.getLine() - 1;
             const justFinishedParsingDate =
