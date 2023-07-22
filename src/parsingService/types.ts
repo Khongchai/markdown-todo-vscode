@@ -16,6 +16,7 @@ export const enum Token {
   todoItem,
   lineEnd,
   sectionEnd,
+  tripleBackTick,
 }
 
 export interface DaySettings {

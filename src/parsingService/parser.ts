@@ -56,6 +56,10 @@ interface _ParsingState {
    * This is because the second todo item is not directly under the date.
    */
   isParsingTodoSectionItem: boolean;
+  /**
+   * true if the parser is currently inside a markdown code block (three backticks).
+   */
+  isInsideCodeBlock: boolean;
 }
 
 /**
@@ -105,10 +109,20 @@ export class DiagnosticsParser {
 
     const state: _ParsingState = {
       isParsingTodoSectionItem: false,
+      isInsideCodeBlock: false,
       todoSections: [],
     };
 
     for (const token of this._tokenizer.tokenize(text)) {
+      if (token === Token.tripleBackTick) {
+        state.isInsideCodeBlock = !state.isInsideCodeBlock;
+        continue;
+      }
+
+      if (state.isInsideCodeBlock) {
+        continue;
+      }
+
       switch (token) {
         case Token.date: {
           // Check for duplicate dates on the same line.

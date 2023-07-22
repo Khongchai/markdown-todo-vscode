@@ -167,6 +167,49 @@ describe("Parser returns the expected diagnostics", () => {
   });
 });
 
+describe("Parser does not report date within a code block", () => {
+  test("Incomplete code block and todo list", () => {
+    const input = [
+      "```",
+      "01/06/1997",
+      "- [ ] Take out the trash",
+      "- [ ] Do the dishes",
+      "01/06/1997",
+      "- [ ] Take out the trash",
+      "- [ ] Do the dishes",
+    ].join("\n");
+
+    assertResult(input, []);
+  });
+  test("Code block and todo list", () => {
+    const input = [
+      "```",
+      "01/06/1997",
+      "```",
+      "- [ ] Take out the trash",
+      "- [ ] Do the dishes",
+      "01/06/1997",
+      "- [ ] Take out the trash",
+      "- [ ] Do the dishes",
+    ].join("\n");
+
+    assertResult(input, [
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(5, 0, 5, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(6, 0, 6, 24),
+      },
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(7, 0, 7, 19),
+      },
+    ]);
+  });
+});
+
 describe("Parser reports invalid date", () => {
   // TODO
 });

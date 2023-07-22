@@ -63,6 +63,14 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
         }
       }
 
+      // Markdown code block begin/end (triple backticks)
+      else if (this._codeblockValidator[0](s.charCodeAt(this._cursor.pos))) {
+        const result = this._handleCodeBlock(s);
+        if (result) {
+          yield result;
+        }
+      }
+
       // other
       else {
         this._cursor.pos++;
@@ -210,6 +218,27 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
 
     this._text = text;
     return Token.sectionEnd;
+  }
+
+  private _handleCodeBlock(s: string) {
+    let text = s[this._cursor.pos];
+    this._cursor.pos++;
+    this._cursor.lineOffset++;
+
+    for (
+      let i = 1;
+      i < this._codeblockValidator.length;
+      i++, this._cursor.pos++, this._cursor.lineOffset++
+    ) {
+      if (!this._codeblockValidator[i](s.charCodeAt(this._cursor.pos))) {
+        return null;
+      }
+
+      text += s[this._cursor.pos];
+    }
+
+    this._text = text;
+    return Token.tripleBackTick;
   }
 
   /**

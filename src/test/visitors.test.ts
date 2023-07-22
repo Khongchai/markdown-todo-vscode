@@ -1,8 +1,4 @@
-import {
-  DateParsedEvent,
-  DiagnosticsParser,
-  ParserVisitor,
-} from "../parsingService/parser";
+import { DateParsedEvent, DiagnosticsParser } from "../parsingService/parser";
 import DateUtil from "../parsingService/utils";
 
 // Modify this later when we have more visitors.
@@ -32,7 +28,7 @@ function runTest(
   expect(results).toStrictEqual(expecteds);
 }
 
-describe("onNewLineAtDate", () => {
+describe("visitorsTest", () => {
   it("tests a single date", () => {
     const input = ["01/06/1997   ", "hello"].join("\n");
 
@@ -46,5 +42,17 @@ describe("onNewLineAtDate", () => {
       [DateUtil.getDateLikeNormalPeople(1997, 6, 1), 0, 13],
       [DateUtil.getDateLikeNormalPeople(1997, 12, 31), 2, 10],
     ]);
+  });
+
+  it("does not gets called within a code block", () => {
+    const input = ["```01/06/1997   ```", "hello"].join("\n");
+
+    runTest(input, []);
+  });
+
+  it("does not gets called from an incomplete code block", () => {
+    const input = ["```01/06/1997", "01/02/2023", "03/04/2025"].join("\n");
+
+    runTest(input, []);
   });
 });

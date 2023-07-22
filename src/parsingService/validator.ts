@@ -6,7 +6,6 @@ import { CharacterCodes } from "./constants";
 type CharValidator = (ch: number) => boolean;
 
 export abstract class DeclarativeValidator {
-  constructor() {}
   /**
    * For declaratively validate the date.
    *
@@ -47,6 +46,12 @@ export abstract class DeclarativeValidator {
     this._isDash,
   ];
 
+  protected readonly _codeblockValidator: CharValidator[] = [
+    (ch) => ch === CharacterCodes.backtick,
+    (ch) => ch === CharacterCodes.backtick,
+    (ch) => ch === CharacterCodes.backtick,
+  ];
+
   protected readonly _endSectionText = " end section ";
 
   protected readonly _markdownCommentEndValidator: CharValidator[] = [
@@ -54,6 +59,10 @@ export abstract class DeclarativeValidator {
     this._isDash,
     (ch) => ch === CharacterCodes.greaterThan,
   ];
+
+  protected _isBacktick(ch: number): boolean {
+    return ch === CharacterCodes.backtick;
+  }
 
   protected _isDash(ch: number): boolean {
     return ch === CharacterCodes.dash;

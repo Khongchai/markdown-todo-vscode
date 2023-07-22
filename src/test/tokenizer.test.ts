@@ -42,3 +42,9 @@ describe("Match section end", () => {
   test("single", () =>
     runTest("<!-- end section -->", [Token.sectionEnd, Token.lineEnd]));
 });
+
+describe("Match backtick code block", () => {
+  test("```", () => runTest("```", [Token.tripleBackTick, Token.lineEnd]));
+  // ignore if not 3 backticks.
+  test("`", () => runTest("`", [Token.lineEnd]));
+});
