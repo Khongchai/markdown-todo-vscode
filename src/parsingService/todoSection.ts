@@ -1,12 +1,12 @@
 import { Diagnostic, Range } from "vscode";
-import { ParsedTODO, ReportedDiagnostic } from "./types";
+import { ParsedDateline, ReportedDiagnostic } from "./types";
 
-export class TODOSection {
+export class DeadlineSection {
   /**
    * The diagnostic associated with this date.
    */
   private _sectionDiagnostics: ReportedDiagnostic | null;
-  private _items: ParsedTODO[];
+  private _items: ParsedDateline[];
   private _theLineDateIsOn: number;
   private _date: Date;
 

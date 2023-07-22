@@ -2,7 +2,7 @@ import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
 import DateUtil from "./utils";
 import { DiagnosticsTokenizer } from "./tokenizer";
 import { DaySettings, ReportedDiagnostic, Token } from "./types";
-import { TODOSection } from "./todoSection";
+import { DeadlineSection as DeadlineSection } from "./todoSection";
 import "../protoExtensions/protoExtensions";
 
 type FunctionMap = {
@@ -40,7 +40,7 @@ export interface ParserVisitor extends FunctionMap {
  * States of the current parser.
  */
 interface _ParsingState {
-  todoSections: TODOSection[];
+  todoSections: DeadlineSection[];
   /**
    * true if the parser is currently parsing a todo item.
    *
@@ -146,7 +146,7 @@ export class DiagnosticsParser {
           const date = this._getDate(this._tokenizer.getText());
           const diagnosticToReport = this._checkDiagnosticSeverity(date);
 
-          const currentSection = new TODOSection(
+          const currentSection = new DeadlineSection(
             diagnosticToReport,
             this._tokenizer.getLine(),
             date

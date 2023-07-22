@@ -1,6 +1,6 @@
 import { DiagnosticSeverity } from "vscode";
 
-export interface ParsedTODO {
+export interface ParsedDateline {
   content: string;
   line: number;
 }
