@@ -9,14 +9,29 @@ type FunctionMap = {
   [K in string]: ((...args: any) => any) | undefined;
 };
 
+export type DateParsedEvent = (
+  date: Date,
+  line: number,
+  lineEnd: number
+) => void;
+
 export interface ParserVisitor extends FunctionMap {
   /**
+   * When newLine char is encountered directly after a date.
    *
    * @param date A date object representing the date that was parsed. This object is recreated on every parse.
    * @param line
    * @param lineEnd
    */
-  onNewLineAtDate(date: Date, line: number, lineEnd: number): void;
+  onNewLineAtDate?: DateParsedEvent;
+  /**
+   * When a line ends directly after a date.
+   *
+   * @param date
+   * @param line
+   * @param lineEnd
+   */
+  onEndLineAtDate?: DateParsedEvent;
   onParseBegin?(): void;
   onParseEnd?(): void;
 }
@@ -162,7 +177,7 @@ export class DiagnosticsParser {
               prevLine === state.todoSections.getLast().getTheLineDateIsOn();
             if (justFinishedParsingDate) {
               this._visitors.forEach((v) =>
-                v.onNewLineAtDate(
+                v.onNewLineAtDate?.(
                   state.todoSections.getLast().getDate(),
                   prevLine,
                   this._tokenizer.getPreviousLineOffset()
@@ -172,6 +187,20 @@ export class DiagnosticsParser {
           }
           continue;
         case Token.lineEnd:
+          if (state.todoSections.isNotEmpty()) {
+            const thisLine = this._tokenizer.getLine();
+            const justFinishedParsingDate =
+              thisLine === state.todoSections.getLast().getTheLineDateIsOn();
+            if (justFinishedParsingDate) {
+              this._visitors.forEach((v) => {
+                v.onEndLineAtDate?.(
+                  state.todoSections.getLast().getDate(),
+                  thisLine,
+                  this._tokenizer.getLineOffset()
+                );
+              });
+            }
+          }
           continue;
         case Token.sectionEnd:
           state.isParsingTodoSectionItem = false;

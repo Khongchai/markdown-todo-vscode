@@ -1,8 +1,12 @@
-import { DiagnosticsParser, ParserVisitor } from "../parsingService/parser";
+import {
+  DateParsedEvent,
+  DiagnosticsParser,
+  ParserVisitor,
+} from "../parsingService/parser";
 import DateUtil from "../parsingService/utils";
 
 // Modify this later when we have more visitors.
-type Expected = Parameters<ParserVisitor["onNewLineAtDate"]>;
+type Expected = Parameters<DateParsedEvent>;
 
 function runTest(
   input: string,
@@ -14,6 +18,9 @@ function runTest(
     visitors: [
       {
         onNewLineAtDate: (...args) => {
+          results.push(args);
+        },
+        onEndLineAtDate: (...args) => {
           results.push(args);
         },
       },
@@ -37,7 +44,7 @@ describe("onNewLineAtDate", () => {
 
     runTest(input, [
       [DateUtil.getDateLikeNormalPeople(1997, 6, 1), 0, 13],
-      [DateUtil.getDateLikeNormalPeople(1997, 12, 31), 2, 13],
+      [DateUtil.getDateLikeNormalPeople(1997, 12, 31), 2, 10],
     ]);
   });
 });
