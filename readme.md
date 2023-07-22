@@ -63,9 +63,14 @@ To explicitly end a date section, you can add `<!-- end section -->` comment any
 
 ## Result
 
-![]()
+![opting out example](assets/opting-out.png)
 
 # Codeblocks
 
 If you surround a date is found to be inside a codeblock, it is ignored.
 
+\`\`\`
+23/07/2023 <!-- Won't be parsed for diagnostics -->
+- [ ] Task1
+- [ ] Task2
+\`\`\`

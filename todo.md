@@ -1,0 +1,2 @@
+- [ ] refactor tokenizer.
+- [ ] Refactor diagnostics logic out of parser.
