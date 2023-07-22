@@ -20,24 +20,26 @@ Everything under a deadline is grouped as one. To begin a new deadline, simply a
 
 ## Result:
 
-![]() 
+![adding dates example](assets/adding-dates.png) 
 
-# **Adding Multiple Deadlines**
-
-
+# **Combining With Existing Markdown Syntaxes**
 
 ```md
-01/02/2023
+<!-- "Today" is 23/07/2023 -->
+## 23/07/2023
 This extension non-invasively extends markdown syntax, so you can add whatever you want **anywhere you want**. For example, this paragraph could have been an explanation of the two todo lists below.
-- [ ] Walk the dog
-- [ ] Feed the cat
-02/02/2023
-- [ ] Some other stuff you have to do
+- [ ] Study for math test
+- [x] ~~_Study for French test_~~
+- [x] ~~_Practice violin_~~
+## 25/07/2023
+- [ ] [Watch this video](https://example.com)
 ```
 
-## Result
+## Result (left vscode, right rendered markdown)
 
-![]()
+![dates and markdown example](assets/dates-and-markdown-syntaxes.png)
+
+The diagnostics was made to work in vscode. It just parses the markdown file and gives you diagnostics using vscode's LSP API. If you preview it (as seen on the right), you won't see all the deadline diagnostics and reports. But because the dates syntax are basically just markdown, if you render it you'll still see the dates, just not the reported diagnostics.
 
 # **Ending a Section Early**
 
@@ -46,11 +48,12 @@ Due to the nature of the syntax, once you add a date, the parser will try to mat
 To explicitly end a date section, you can add `<!-- end section -->` comment anywhere below the last list in the section to end it. 
 
 ```md
+<!-- "Today" is 23/07/2023 -->
 # **Math Stuff**
-## 01/02/2023
+## 31/12/2023
 - [x] Task1
 - [x] Task2
-## 05/02/2023
+## 01/07/2023
 - [ ] Task3
 <!-- end section -->
 # English Stuff_ 
@@ -62,8 +65,7 @@ To explicitly end a date section, you can add `<!-- end section -->` comment any
 
 ![]()
 
-# Footnotes
-- Dates, even if they conform to dd/mm/yyyy format, inside codeblocks are ignored.
-- This was made to work in vscode. If you preview it, you won't see all the deadline diagnostics and reports. But the dates syntax are nothing new, it only extends existing markdown syntax. So if you render the markdown, nothing weird will happen. You'll just see the dates.
+# Codeblocks
 
+If you surround a date is found to be inside a codeblock, it is ignored.
 
