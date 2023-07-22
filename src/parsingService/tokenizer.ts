@@ -113,21 +113,8 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
    * @returns Token.date if the string is a date, null otherwise
    */
   private _handleDate(s: string): Token.date | null {
-    let text = s[this._cursor.pos]; // first validator can be skipped
-    this._cursor.pos++;
-    this._cursor.lineOffset++;
-    for (
-      let i = 1;
-      i < this._dateValidator.length;
-      i++, this._cursor.pos++, this._cursor.lineOffset++
-    ) {
-      if (!this._dateValidator[i](s.charCodeAt(this._cursor.pos))) {
-        return null;
-      }
-
-      text += s[this._cursor.pos];
-    }
-
+    const text = this._useValidator(s, this._dateValidator);
+    if (!text) return null;
     this._text = text;
     return Token.date;
   }
@@ -137,20 +124,8 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
    * @returns Token.todoItem if the string is a todo item, null otherwise
    */
   private _handleTodoItem(s: string): Token.todoItem | null {
-    let text = s[this._cursor.pos]; // skip the first character.
-    this._cursor.pos++;
-    this._cursor.lineOffset++;
-    for (
-      let i = 1;
-      i < this._todoStartLineValidator.length;
-      i++, this._cursor.pos++, this._cursor.lineOffset++
-    ) {
-      if (!this._todoStartLineValidator[i](s.charCodeAt(this._cursor.pos))) {
-        return null;
-      }
-
-      text += s[this._cursor.pos];
-    }
+    let text = this._useValidator(s, this._todoStartLineValidator);
+    if (!text) return null;
 
     const prevPos = this._cursor.pos;
     this._forwardCursorToNewLine(s, (c) => {
@@ -175,7 +150,6 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
     this._cursor.pos++;
     this._cursor.lineOffset++;
 
-    // TODO refactor for less copy-and-pasting
     for (
       let i = 1;
       i < this._markdownCommentStartValidator.length;
@@ -220,25 +194,41 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
     return Token.sectionEnd;
   }
 
-  private _handleCodeBlock(s: string) {
-    let text = s[this._cursor.pos];
+  private _handleCodeBlock(s: string): Token.tripleBackTick | null {
+    const result = this._useValidator(s, this._codeblockValidator);
+    if (!result) return null;
+    this._text = result;
+    return Token.tripleBackTick;
+  }
+
+  /**
+   * Use the validator to validate a given string.
+   *
+   * Forward cursor position for every validator used up.
+   *
+   * @returns validated string or null if the validation fails
+   */
+  private _useValidator(
+    s: string,
+    validator: ((c: number) => boolean)[]
+  ): string | null {
+    let text = s[this._cursor.pos]; // skip the first character.
     this._cursor.pos++;
     this._cursor.lineOffset++;
 
     for (
       let i = 1;
-      i < this._codeblockValidator.length;
+      i < validator.length;
       i++, this._cursor.pos++, this._cursor.lineOffset++
     ) {
-      if (!this._codeblockValidator[i](s.charCodeAt(this._cursor.pos))) {
+      if (!validator[i](s.charCodeAt(this._cursor.pos))) {
         return null;
       }
 
       text += s[this._cursor.pos];
     }
 
-    this._text = text;
-    return Token.tripleBackTick;
+    return text;
   }
 
   /**
