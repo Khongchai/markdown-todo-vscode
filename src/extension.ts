@@ -11,16 +11,18 @@ export function activate(context: vscode.ExtensionContext) {
     // TODO update only changes in the future?
     vscode.workspace.onDidChangeTextDocument((e) =>
       diagnosticsRunner.update(e.document)
-    )
-  );
-
-  context.subscriptions.push(
+    ),
+    vscode.languages.registerCompletionItemProvider("markdown", {
+      provideCompletionItems: () => {
+        const endSectionCompletion = new vscode.CompletionItem(
+          "<!-- end section -->"
+        );
+        return [endSectionCompletion];
+      },
+    }),
     vscode.workspace.onDidCloseTextDocument((e) =>
       diagnosticsRunner.deleteDocument(e)
-    )
-  );
-
-  context.subscriptions.push(
+    ),
     vscode.window.onDidChangeActiveTextEditor(
       (editor) => editor && diagnosticsRunner.update(editor.document)
     )
