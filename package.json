@@ -1,7 +1,7 @@
 {
   "name": "markdown-todo-vscode",
   "private": true,
-  "displayName": "Code Actions Provider Sample",
+  "displayName": "Markdown Dated Todo List",
   "version": "0.0.2",
   "publisher": "Khongchai",
   "repository": {
