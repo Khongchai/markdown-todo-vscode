@@ -25,7 +25,7 @@ Everything under a deadline is grouped as one. To begin a new deadline, simply a
 # **Combining With Existing Markdown Syntaxes**
 
 ```md
-<!-- "Today" is 23/07/2023 -->
+<!-- "Today" is 28/07/2023 -->
 ## 23/07/2023
 This extension non-invasively extends markdown syntax, so you can add whatever you want **anywhere you want**. For example, this paragraph could have been an explanation of the two todo lists below.
 - [ ] Study for math test
