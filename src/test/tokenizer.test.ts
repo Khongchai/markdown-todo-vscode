@@ -39,12 +39,46 @@ describe("Invalid list tokens", () => {
 });
 
 describe("Match section end", () => {
-  test("single", () =>
-    runTest("<!-- end section -->", [Token.sectionEnd, Token.lineEnd]));
+  test("end section only", () =>
+    runTest("<!-- end section -->", [
+      Token.commentStart,
+      Token.commentEnd,
+      Token.sectionEnd,
+      Token.lineEnd,
+    ]));
+  test("end section with other stuff", () =>
+    runTest("<!--blegh end section blagh-->", [
+      Token.commentStart,
+      Token.commentEnd,
+      Token.lineEnd,
+    ]));
 });
 
 describe("Match backtick code block", () => {
   test("```", () => runTest("```", [Token.tripleBackTick, Token.lineEnd]));
   // ignore if not 3 backticks.
   test("`", () => runTest("`", [Token.lineEnd]));
+});
+
+describe("Match comment tokens", () => {
+  test("<!--", () => runTest("<!--", [Token.commentStart, Token.lineEnd]));
+  // commentEnd if section end is not preceded by a commentStart
+  test("-->", () => runTest("-->", [Token.lineEnd]));
+  test("<!-- -->", () =>
+    runTest("<!-- -->", [Token.commentStart, Token.commentEnd, Token.lineEnd]));
+  test("<!---->", () =>
+    runTest("<!---->", [Token.commentStart, Token.commentEnd, Token.lineEnd]));
+  test("<!-- foobarbaz -->", () =>
+    runTest("<!-- foobarbaz -->", [
+      Token.commentStart,
+      Token.commentEnd,
+      Token.lineEnd,
+    ]));
+  test("<!--foobarbaz-->", () =>
+    runTest("<!--foobarbaz-->", [
+      Token.commentStart,
+      Token.commentEnd,
+      Token.lineEnd,
+    ]));
+  test("<!", () => runTest("<!", [Token.lineEnd]));
 });

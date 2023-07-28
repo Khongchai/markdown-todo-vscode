@@ -6,6 +6,14 @@ import { CharacterCodes } from "./constants";
 type CharValidator = (ch: number) => boolean;
 
 export abstract class DeclarativeValidator {
+  private static _validatorFromText(text: string): CharValidator[] {
+    return text.split("").map(
+      (validatorChar) =>
+        function (ch: number): boolean {
+          return ch === validatorChar.charCodeAt(0);
+        }
+    );
+  }
   /**
    * For declaratively validate the date.
    *
@@ -24,41 +32,26 @@ export abstract class DeclarativeValidator {
     this._isDigit,
   ];
 
-  /**
-   * TODO profile this as well.
-   *
-   * Validate if a sequence of char is - [ ]
-   */
   protected readonly _todoStartLineValidator: CharValidator[] = [
     (ch) => this._isDash(ch) || ch === CharacterCodes.plus,
     (ch) => ch === CharacterCodes.space,
     (ch) => ch === CharacterCodes.openBracket,
-    // If checked, skip
+    // If checkbox is checked, skip
     (ch) => ch === CharacterCodes.space,
     (ch) => ch === CharacterCodes.closeBracket,
     (ch) => ch === CharacterCodes.space,
   ];
 
-  protected readonly _markdownCommentStartValidator: CharValidator[] = [
-    (ch) => ch === CharacterCodes.lessThan,
-    (ch) => ch === CharacterCodes.exclamationMark,
-    this._isDash,
-    this._isDash,
-  ];
+  protected readonly _codeblockValidator: CharValidator[] =
+    DeclarativeValidator._validatorFromText("```");
 
-  protected readonly _codeblockValidator: CharValidator[] = [
-    (ch) => ch === CharacterCodes.backtick,
-    (ch) => ch === CharacterCodes.backtick,
-    (ch) => ch === CharacterCodes.backtick,
-  ];
+  protected readonly _markdownCommentStartValidator: CharValidator[] =
+    DeclarativeValidator._validatorFromText("<!--");
 
-  protected readonly _endSectionText = " end section ";
+  protected readonly _markdownCommentEndValidator: CharValidator[] =
+    DeclarativeValidator._validatorFromText("-->");
 
-  protected readonly _markdownCommentEndValidator: CharValidator[] = [
-    this._isDash,
-    this._isDash,
-    (ch) => ch === CharacterCodes.greaterThan,
-  ];
+  protected readonly _sectionEndText = " end section ";
 
   protected _isBacktick(ch: number): boolean {
     return ch === CharacterCodes.backtick;

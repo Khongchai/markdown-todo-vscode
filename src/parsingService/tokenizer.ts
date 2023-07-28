@@ -53,13 +53,24 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
         }
       }
 
-      // Are we closing off a section?
+      // Are we closing off a section or is it just a comment?
       else if (
         this._markdownCommentStartValidator[0](s.charCodeAt(this._cursor.pos))
       ) {
-        const result = this._handleSectionEnd(s);
-        if (result) {
-          yield result;
+        const commentStartToken = this._handleCommentStart(s);
+        if (commentStartToken) {
+          yield commentStartToken;
+
+          if (this._cursor.pos < s.length) {
+            const [commentEndToken, sectionEndToken] =
+              this._handleCommentEnd(s);
+            if (commentEndToken && sectionEndToken) {
+              yield commentEndToken;
+              yield sectionEndToken;
+            } else if (commentEndToken) {
+              yield commentEndToken;
+            }
+          }
         }
       }
 
@@ -131,7 +142,7 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
     this._forwardCursorToNewLine(s, (c) => {
       text += c;
     });
-    // It's not a valid markdown list item if there's no text after the [x]
+    // It's not a valid markdown list item if there's no text after the [x] | [ ]
     if (this._cursor.pos <= prevPos) {
       return null;
     }
@@ -140,65 +151,50 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
     return Token.todoItem;
   }
 
-  /**
-   *
-   * @param s the string to be parsed
-   * @returns Token.sectionEnd if the string is a section end, null otherwise
-   */
-  private _handleSectionEnd(s: string): Token.sectionEnd | null {
-    let text = s[this._cursor.pos];
-    this._cursor.pos++;
-    this._cursor.lineOffset++;
-
-    for (
-      let i = 1;
-      i < this._markdownCommentStartValidator.length;
-      i++, this._cursor.pos++, this._cursor.lineOffset++
-    ) {
-      if (
-        !this._markdownCommentStartValidator[i](s.charCodeAt(this._cursor.pos))
-      ) {
-        return null;
-      }
-
-      text += s[this._cursor.pos];
-    }
-
-    for (
-      let i = 0;
-      i < this._endSectionText.length;
-      i++, this._cursor.pos++, this._cursor.lineOffset++
-    ) {
-      if (this._endSectionText[i] !== s[this._cursor.pos]) {
-        return null;
-      }
-
-      text += s[this._cursor.pos];
-    }
-
-    for (
-      let i = 0;
-      i < this._markdownCommentEndValidator.length;
-      i++, this._cursor.pos++, this._cursor.lineOffset++
-    ) {
-      if (
-        !this._markdownCommentEndValidator[i](s.charCodeAt(this._cursor.pos))
-      ) {
-        return null;
-      }
-
-      text += s[this._cursor.pos];
-    }
-
-    this._text = text;
-    return Token.sectionEnd;
-  }
-
   private _handleCodeBlock(s: string): Token.tripleBackTick | null {
     const result = this._useValidator(s, this._codeblockValidator);
     if (!result) return null;
     this._text = result;
     return Token.tripleBackTick;
+  }
+
+  private _handleCommentStart(s: string): Token.commentStart | null {
+    const result = this._useValidator(s, this._markdownCommentStartValidator);
+    if (!result) return null;
+    this._text = result;
+    return Token.commentStart;
+  }
+
+  private _handleCommentEnd(
+    s: string
+  ): [Token.commentEnd | null, Token.sectionEnd | null] {
+    let commentText = s[this._cursor.pos];
+
+    while (
+      s.length > this._cursor.pos &&
+      !this._isLineBreak(s.charCodeAt(this._cursor.pos))
+    ) {
+      if (
+        this._markdownCommentEndValidator[0](s.charCodeAt(this._cursor.pos))
+      ) {
+        const result = this._useValidator(s, this._markdownCommentEndValidator);
+        if (!result) continue;
+
+        // remove last char because last char is the end comment marker.
+        const isSectionEndMarker =
+          commentText.substring(0, commentText.length - 1) ===
+          this._sectionEndText;
+        return isSectionEndMarker
+          ? [Token.commentEnd, Token.sectionEnd]
+          : [Token.commentEnd, null];
+      }
+
+      this._cursor.pos++;
+      this._cursor.lineOffset++;
+      commentText += s[this._cursor.pos];
+    }
+
+    return [null, null];
   }
 
   /**

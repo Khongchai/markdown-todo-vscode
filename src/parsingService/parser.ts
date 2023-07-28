@@ -60,6 +60,10 @@ interface _ParsingState {
    * true if the parser is currently inside a markdown code block (three backticks).
    */
   isInsideCodeBlock: boolean;
+  /**
+   * true if the parser is currently inside a markdown comment (<!-- -->).
+   */
+  isInsideComment: boolean;
 }
 
 /**
@@ -110,6 +114,7 @@ export class DiagnosticsParser {
     const state: _ParsingState = {
       isParsingTodoSectionItem: false,
       isInsideCodeBlock: false,
+      isInsideComment: false,
       todoSections: [],
     };
 
@@ -119,7 +124,20 @@ export class DiagnosticsParser {
         continue;
       }
 
-      if (state.isInsideCodeBlock) {
+      if (token === Token.commentStart) {
+        state.isInsideComment = true;
+        continue;
+      }
+
+      if (token === Token.commentEnd) {
+        state.isInsideComment = false;
+        continue;
+      }
+
+      if (
+        (state.isInsideCodeBlock || state.isInsideComment) &&
+        token !== Token.lineEnd
+      ) {
         continue;
       }
 
@@ -213,6 +231,9 @@ export class DiagnosticsParser {
           continue;
         case Token.sectionEnd:
           state.isParsingTodoSectionItem = false;
+          continue;
+        default:
+          continue;
       }
     }
 

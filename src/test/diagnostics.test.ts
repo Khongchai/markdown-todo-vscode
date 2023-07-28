@@ -186,6 +186,35 @@ describe("Parser returns the expected diagnostics", () => {
   });
 });
 
+describe("Parser does not report date within a comment", () => {
+  test("Incomplete comment and todo list", () => {
+    const input = [
+      "<!-- 01/06/1997",
+      "01/06/1997",
+      "- [ ] Take out the trash",
+    ].join("\n");
+    assertResult(input, []);
+  });
+
+  test("Comment and todo list", () => {
+    const input = [
+      "<!-- 01/06/1997 -->",
+      "01/06/1997",
+      "- [ ] Take out the trash",
+    ].join("\n");
+    assertResult(input, [
+      {
+        range: new Range(1, 0, 1, 10),
+        severity: DiagnosticSeverity.Error,
+      },
+      {
+        range: new Range(2, 0, 2, 24),
+        severity: DiagnosticSeverity.Error,
+      },
+    ]);
+  });
+});
+
 describe("Parser does not report date within a code block", () => {
   test("Incomplete code block and todo list", () => {
     const input = [
@@ -230,5 +259,5 @@ describe("Parser does not report date within a code block", () => {
 });
 
 describe("Parser reports invalid date", () => {
-  // TODO
+  // TODO?
 });
