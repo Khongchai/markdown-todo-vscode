@@ -187,6 +187,10 @@ describe("Parser returns the expected diagnostics", () => {
 });
 
 describe("Parser does not report date within a comment", () => {
+  test("Only date", () => {
+    const input = ["<!-- 01/06/1997 -->"].join("\n");
+    assertResult(input, []);
+  });
   test("Incomplete comment and todo list", () => {
     const input = [
       "<!-- 01/06/1997",
