@@ -150,7 +150,7 @@ describe("Parser returns the expected diagnostics", () => {
       ]);
     });
 
-    test("Case 3: Recoginize only one date within the same line", () => {
+    test("Case 3: Recognize only one date within the same line", () => {
       const input = ["30/07/1997 01/08/1997"].join("\n");
 
       assertResult(input, [
@@ -161,6 +161,25 @@ describe("Parser returns the expected diagnostics", () => {
         {
           severity: DiagnosticSeverity.Hint,
           range: new Range(0, 11, 0, 21),
+        },
+      ]);
+    });
+
+    test("Case 4: If a list is checked, skip it", () => {
+      const input = [
+        "30/07/1997",
+        "- [x] Take out the trash",
+        "- [ ] Walk the cat",
+      ].join("\n");
+
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(0, 0, 0, 10),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(2, 0, 2, 18),
         },
       ]);
     });

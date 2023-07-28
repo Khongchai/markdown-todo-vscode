@@ -33,8 +33,8 @@ export abstract class DeclarativeValidator {
     (ch) => this._isDash(ch) || ch === CharacterCodes.plus,
     (ch) => ch === CharacterCodes.space,
     (ch) => ch === CharacterCodes.openBracket,
-    (ch) =>
-      [CharacterCodes.x, CharacterCodes.X, CharacterCodes.space].includes(ch),
+    // If checked, skip
+    (ch) => ch === CharacterCodes.space,
     (ch) => ch === CharacterCodes.closeBracket,
     (ch) => ch === CharacterCodes.space,
   ];
