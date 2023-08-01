@@ -7,7 +7,7 @@ If the deadline is approaching, you get a squiggly line under the date. The rema
 # **Adding a Deadline Section**
 
 ```md
-<!-- "Today" is 23/07/2023 -->
+<!-- "Today" is 08/01/2023 -->
 22/07/2023
 - [ ] Turn in math homework
 - [ ] Learn German
@@ -27,12 +27,13 @@ Everything under a deadline is grouped as one. To begin a new deadline, simply a
 ```md
 <!-- "Today" is 28/07/2023 -->
 ## 23/07/2023
-This extension non-invasively extends markdown syntax, so you can add whatever you want **anywhere you want**. For example, this paragraph could have been an explanation of the two todo lists below.
+This extension non-invasively extends markdown syntax, so you can add whatever you want **anywhere you want**. For example, this paragraph could have been an explanation of the two todo lists below. 
 - [ ] Study for math test
 - [x] ~~_Study for French test_~~
 - [x] ~~_Practice violin_~~
 ## 25/07/2023
 - [ ] [Watch this video](https://example.com)
+## 27/07/2023 <!-- A date will not be underlined if it does not contain any lists. -->
 ```
 
 ## Result (left vscode, right rendered markdown)
@@ -67,7 +68,7 @@ To explicitly end a date section, you can add `<!-- end section -->` comment any
 
 # Codeblocks
 
-If you surround a date is found to be inside a codeblock, it is ignored.
+If you a date is found to be inside a codeblock, it is ignored.
 
 \`\`\`
 23/07/2023 <!-- Won't be parsed for diagnostics -->

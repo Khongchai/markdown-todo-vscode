@@ -22,6 +22,10 @@ export default class DiagnosticsRunnerImpl implements DiagnosticsRunner {
   }
 
   public update(document: vscode.TextDocument): void {
+    // if extension is not .md, return
+    if (document.languageId !== "markdown") {
+      return;
+    }
     this._diagnosticsCollection.set(
       document.uri,
       this._parser.parse(document.getText())
