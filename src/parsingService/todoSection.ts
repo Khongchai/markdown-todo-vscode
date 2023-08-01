@@ -7,7 +7,7 @@ export class DeadlineSection {
    */
   private _sectionDiagnostics: ReportedDiagnostic | null;
   private _items: ParsedDateline[];
-  private _theLineDateIsOn: number;
+  private _location: number;
   private _date: Date;
   private _containsUnfinishedItems?: boolean;
   private _potentialDiagnosticsRange?: Diagnostic;
@@ -19,7 +19,7 @@ export class DeadlineSection {
   ) {
     this._items = [];
     this._sectionDiagnostics = sectionDiagnostics;
-    this._theLineDateIsOn = line;
+    this._location = line;
     this._date = date;
     this._containsUnfinishedItems = undefined;
     this._potentialDiagnosticsRange = undefined;
@@ -76,14 +76,16 @@ export class DeadlineSection {
    * @returns Yeah, just to be clear - this is the line number of the date, not the todo items.
    */
   public getTheLineDateIsOn(): number {
-    return this._theLineDateIsOn;
+    return this._location;
   }
 
   public getDate(): Date {
     return this._date;
   }
 
-  public getContainsUnfinishedItems(): boolean {
-    return this._containsUnfinishedItems ?? false;
+  public get containsUnfinishedItems() {
+    return this._containsUnfinishedItems !== undefined
+      ? this._containsUnfinishedItems && this.hasItems
+      : false;
   }
 }

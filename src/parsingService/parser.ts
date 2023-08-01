@@ -5,17 +5,13 @@ import { DaySettings, ReportedDiagnostic, Token } from "./types";
 import { DeadlineSection as DeadlineSection } from "./todoSection";
 import "../protoExtensions/protoExtensions";
 
-type FunctionMap = {
-  [K in string]: ((...args: any) => any) | undefined;
-};
-
 export type DateParsedEvent = (
-  date: Date,
+  section: DeadlineSection,
   line: number,
   lineEnd: number
 ) => void;
 
-export interface ParserVisitor extends FunctionMap {
+export interface ParserVisitor {
   /**
    * When newLine char is encountered directly after a date.
    *
@@ -217,7 +213,7 @@ export class DiagnosticsParser {
             if (justFinishedParsingDate) {
               this._visitors.forEach((v) =>
                 v.onNewLineAtDate?.(
-                  state.todoSections.getLast().getDate(),
+                  state.todoSections.getLast(),
                   prevLine,
                   this._tokenizer.getPreviousLineOffset()
                 )
@@ -233,7 +229,7 @@ export class DiagnosticsParser {
             if (justFinishedParsingDate) {
               this._visitors.forEach((v) => {
                 v.onEndLineAtDate?.(
-                  state.todoSections.getLast().getDate(),
+                  state.todoSections.getLast(),
                   thisLine,
                   this._tokenizer.getLineOffset()
                 );
@@ -253,8 +249,7 @@ export class DiagnosticsParser {
       /**
        * If a section has > 1 list item, and that list item is not checked, we should highlight the date.
        */
-      const shouldHighlightDate =
-        section.getContainsUnfinishedItems() && section.hasItems;
+      const shouldHighlightDate = section.containsUnfinishedItems;
       if (shouldHighlightDate) {
         // Order so that we highlight the date first.
         // This doesn't make a difference vissually, but it's easier to reason about when writing tests.
