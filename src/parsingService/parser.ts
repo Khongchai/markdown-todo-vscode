@@ -178,7 +178,7 @@ export class DiagnosticsParser {
           }
 
           const range = this._getRange();
-          diagnostics.push({
+          currentSection.addPotentialDiagnostics({
             range,
             message: diagnosticToReport.message,
             severity: diagnosticToReport.sev,
@@ -186,6 +186,17 @@ export class DiagnosticsParser {
 
           continue;
         }
+        case Token.finishedTodoItem:
+          if (state.isParsingTodoSectionItem) {
+            state.todoSections
+              .getLast()
+              .addTodoItem(
+                this._tokenizer.getText(),
+                this._tokenizer.getLine(),
+                true
+              );
+          }
+          continue;
         case Token.todoItem:
           // We need to check if we're inside of a date section.
           if (state.isParsingTodoSectionItem) {
@@ -193,7 +204,8 @@ export class DiagnosticsParser {
               .getLast()
               .addTodoItem(
                 this._tokenizer.getText(),
-                this._tokenizer.getLine()
+                this._tokenizer.getLine(),
+                false
               );
           }
           continue;
@@ -238,7 +250,17 @@ export class DiagnosticsParser {
     }
 
     for (const section of state.todoSections) {
-      section.addTodoItemsDiagnostics(diagnostics);
+      /**
+       * If a section has > 1 list item, and that list item is not checked, we should highlight the date.
+       */
+      const shouldHighlightDate =
+        section.getContainsUnfinishedItems() && section.hasItems;
+      if (shouldHighlightDate) {
+        // Order so that we highlight the date first.
+        // This doesn't make a difference vissually, but it's easier to reason about when writing tests.
+        section.addDateDiagnostics(diagnostics);
+        section.addTodoItemsDiagnostics(diagnostics);
+      }
     }
 
     this._visitors.forEach((v) => v.onParseEnd?.());

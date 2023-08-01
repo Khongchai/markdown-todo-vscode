@@ -3,6 +3,8 @@ import { DiagnosticSeverity } from "vscode";
 export interface ParsedDateline {
   content: string;
   line: number;
+  // - [ ] or - [x] || - [X]
+  isChecked: boolean;
 }
 
 export interface ReportedDiagnostic {
@@ -10,10 +12,16 @@ export interface ReportedDiagnostic {
   message: string;
 }
 
+/**
+ * Arbitrarily-sized token. Can be a single char, or a sequence of char.
+ */
 export const enum Token {
   newLine,
   date,
+  // - [ ]
   todoItem,
+  // - [x]
+  finishedTodoItem,
   lineEnd,
   sectionEnd,
   tripleBackTick,

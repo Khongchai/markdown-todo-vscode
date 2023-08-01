@@ -9,6 +9,8 @@ export class DeadlineSection {
   private _items: ParsedDateline[];
   private _theLineDateIsOn: number;
   private _date: Date;
+  private _containsUnfinishedItems?: boolean;
+  private _potentialDiagnosticsRange?: Diagnostic;
 
   constructor(
     sectionDiagnostics: ReportedDiagnostic | null,
@@ -19,6 +21,8 @@ export class DeadlineSection {
     this._sectionDiagnostics = sectionDiagnostics;
     this._theLineDateIsOn = line;
     this._date = date;
+    this._containsUnfinishedItems = undefined;
+    this._potentialDiagnosticsRange = undefined;
   }
 
   /**
@@ -28,6 +32,7 @@ export class DeadlineSection {
     if (!this._sectionDiagnostics || !this._items.length) return;
 
     for (const item of this._items) {
+      if (item.isChecked) continue;
       // We report diagnostics error at the entire todo line.
       const range = new Range(item.line, 0, item.line, item.content.length);
       diagnostics.push({
@@ -50,8 +55,21 @@ export class DeadlineSection {
     return this._sectionDiagnostics;
   }
 
-  public addTodoItem(item: string, line: number) {
-    this._items.push({ content: item, line });
+  public addTodoItem(item: string, line: number, isChecked: boolean) {
+    // If we haven't seen any unfinished items yet, and this item is unfinished, then we have seen an unfinished item.
+    if (this._containsUnfinishedItems === undefined && !isChecked) {
+      this._containsUnfinishedItems = true;
+    }
+    this._items.push({ content: item, line, isChecked });
+  }
+
+  public addPotentialDiagnostics(diagnostics: Diagnostic) {
+    this._potentialDiagnosticsRange = diagnostics;
+  }
+
+  public addDateDiagnostics(diagnostics: Diagnostic[]) {
+    if (!this._potentialDiagnosticsRange) return;
+    diagnostics.push(this._potentialDiagnosticsRange);
   }
 
   /**
@@ -63,5 +81,9 @@ export class DeadlineSection {
 
   public getDate(): Date {
     return this._date;
+  }
+
+  public getContainsUnfinishedItems(): boolean {
+    return this._containsUnfinishedItems ?? false;
   }
 }

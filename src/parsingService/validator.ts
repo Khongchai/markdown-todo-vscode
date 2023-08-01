@@ -32,15 +32,22 @@ export abstract class DeclarativeValidator {
     this._isDigit,
   ];
 
-  protected readonly _todoStartLineValidator: CharValidator[] = [
-    (ch) => this._isDash(ch) || ch === CharacterCodes.plus,
-    (ch) => ch === CharacterCodes.space,
-    (ch) => ch === CharacterCodes.openBracket,
-    // If checkbox is checked, skip
-    (ch) => ch === CharacterCodes.space,
-    (ch) => ch === CharacterCodes.closeBracket,
-    (ch) => ch === CharacterCodes.space,
-  ];
+  protected readonly _todoValidators: {
+    start: CharValidator[];
+    checkMark: CharValidator;
+    end: CharValidator[];
+  } = {
+    start: [
+      (ch) => ch === CharacterCodes.dash || ch === CharacterCodes.plus,
+      (ch) => ch === CharacterCodes.space,
+      (ch) => ch === CharacterCodes.openBracket,
+    ],
+    checkMark: (ch) => ch === CharacterCodes.x || ch === CharacterCodes.X,
+    end: [
+      (ch) => ch === CharacterCodes.closeBracket,
+      (ch) => ch === CharacterCodes.space,
+    ],
+  };
 
   protected readonly _codeblockValidator: CharValidator[] =
     DeclarativeValidator._validatorFromText("```");
@@ -52,14 +59,6 @@ export abstract class DeclarativeValidator {
     DeclarativeValidator._validatorFromText("-->");
 
   protected readonly _sectionEndText = " end section ";
-
-  protected _isBacktick(ch: number): boolean {
-    return ch === CharacterCodes.backtick;
-  }
-
-  protected _isDash(ch: number): boolean {
-    return ch === CharacterCodes.dash;
-  }
 
   protected _isDigit(ch: number): boolean {
     return ch >= CharacterCodes._0 && ch <= CharacterCodes._9;

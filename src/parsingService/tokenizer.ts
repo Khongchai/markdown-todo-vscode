@@ -44,9 +44,7 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
       }
 
       // Might be a todo item
-      else if (
-        this._todoStartLineValidator[0](s.charCodeAt(this._cursor.pos))
-      ) {
+      else if (this._todoValidators.start[0](s.charCodeAt(this._cursor.pos))) {
         const result = this._handleTodoItem(s);
         if (result) {
           yield result;
@@ -134,9 +132,32 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
    * @param s the string to be parsed
    * @returns Token.todoItem if the string is a todo item, null otherwise
    */
-  private _handleTodoItem(s: string): Token.todoItem | null {
-    let text = this._useValidator(s, this._todoStartLineValidator);
+  private _handleTodoItem(
+    s: string
+  ): Token.todoItem | Token.finishedTodoItem | null {
+    let token: Token.todoItem | Token.finishedTodoItem;
+
+    const { start, checkMark, end } = this._todoValidators;
+    let text = this._useValidator(s, start);
     if (!text) return null;
+
+    if (checkMark(s.charCodeAt(this._cursor.pos))) {
+      token = Token.finishedTodoItem;
+      text += s[this._cursor.pos];
+      this._cursor.pos++;
+      this._cursor.lineOffset++;
+    } else if (CharacterCodes.space === s.charCodeAt(this._cursor.pos)) {
+      token = Token.todoItem;
+      text += s[this._cursor.pos];
+      this._cursor.pos++;
+      this._cursor.lineOffset++;
+    } else {
+      return null;
+    }
+
+    const endResult = this._useValidator(s, end, false);
+    if (!endResult) return null;
+    text += endResult;
 
     const prevPos = this._cursor.pos;
     this._forwardCursorToNewLine(s, (c) => {
@@ -148,7 +169,7 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
     }
 
     this._text = text;
-    return Token.todoItem;
+    return token;
   }
 
   private _handleCodeBlock(s: string): Token.tripleBackTick | null {
@@ -202,18 +223,24 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
    *
    * Forward cursor position for every validator used up.
    *
+   * If all validators are used up, the current cursor position will be the next character after the validated pattern.
+   *
    * @returns validated string or null if the validation fails
    */
   private _useValidator(
     s: string,
-    validator: ((c: number) => boolean)[]
+    validator: ((c: number) => boolean)[],
+    skipFirst = true
   ): string | null {
-    let text = s[this._cursor.pos]; // skip the first character.
-    this._cursor.pos++;
-    this._cursor.lineOffset++;
+    let text = "";
+    if (skipFirst) {
+      text = s[this._cursor.pos];
+      this._cursor.pos++;
+      this._cursor.lineOffset++;
+    }
 
     for (
-      let i = 1;
+      let i = skipFirst ? 1 : 0;
       i < validator.length;
       i++, this._cursor.pos++, this._cursor.lineOffset++
     ) {

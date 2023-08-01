@@ -37,53 +37,41 @@ function assertResult(
 }
 
 describe("Parser returns the expected diagnostics", () => {
-  describe("Overdue", () => {
-    test("Single date", () => {
-      const input = ["01/06/1997"].join("\n");
-      assertResult(input, [
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(0, 0, 0, 10),
-        },
-      ]);
-    });
-
-    test("Single date with some texts", () => {
-      const input = ["some random text 01/06/1997"].join("\n");
-      assertResult(input, [
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(0, 17, 0, 27),
-        },
-      ]);
-    });
-
-    test("Multiple dates", () => {
-      const input = ["", "01/01/1997", "01/01/1997", "01/01/1997"].join("\n");
-      assertResult(input, [
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(1, 0, 1, 10),
-        },
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(2, 0, 2, 10),
-        },
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(3, 0, 3, 10),
-        },
-      ]);
-    });
+  // Single date without a list should not be highlighted for anything.
+  test("Single date", () => {
+    const input = ["01/06/1997"].join("\n");
+    assertResult(input, []);
   });
 
-  test("Multiple date", () => {
+  test("Single date with some texts", () => {
+    const input = ["some random text 01/06/1997", "- [ ] a task"].join("\n");
+    assertResult(input, [
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(0, 17, 0, 27),
+      },
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(1, 0, 1, 12),
+      },
+    ]);
+  });
+
+  test("Multiple dates", () => {
     const input = [
       "30/07/1997",
+      "- [ ] Take out the trash",
       "01/08/1997",
+      "01/08/1997",
+      "- [ ] Take out the trash",
+      "01/08/1997",
+      "- [ ] Take out the trash",
       "03/08/1997",
+      "- [ ] Take out the trash",
       "05/08/1997",
+      "- [ ] Take out the trash",
       "07/08/1997",
+      "- [ ] Take out the trash",
     ].join("\n");
 
     assertResult(input, [
@@ -92,12 +80,32 @@ describe("Parser returns the expected diagnostics", () => {
         range: new Range(0, 0, 0, 10),
       },
       {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(1, 0, 1, 24),
+      },
+      {
         severity: DiagnosticSeverity.Warning,
-        range: new Range(1, 0, 1, 10),
+        range: new Range(3, 0, 3, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Warning,
+        range: new Range(4, 0, 4, 24),
+      },
+      {
+        severity: DiagnosticSeverity.Warning,
+        range: new Range(5, 0, 5, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Warning,
+        range: new Range(6, 0, 6, 24),
       },
       {
         severity: DiagnosticSeverity.Information,
-        range: new Range(2, 0, 2, 10),
+        range: new Range(7, 0, 7, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Information,
+        range: new Range(8, 0, 8, 24),
       },
     ]);
   });
@@ -154,10 +162,6 @@ describe("Parser returns the expected diagnostics", () => {
       const input = ["30/07/1997 01/08/1997"].join("\n");
 
       assertResult(input, [
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(0, 0, 0, 10),
-        },
         {
           severity: DiagnosticSeverity.Hint,
           range: new Range(0, 11, 0, 21),
@@ -257,6 +261,79 @@ describe("Parser does not report date within a code block", () => {
       {
         severity: DiagnosticSeverity.Error,
         range: new Range(7, 0, 7, 19),
+      },
+    ]);
+  });
+});
+
+describe("Finished list don't get reported", () => {
+  test("Just one finished list", () => {
+    const input = ["01/06/1997", "- [x] Take out the trash"].join("\n");
+    assertResult(input, []);
+  });
+
+  test("Finished list and unfinished list", () => {
+    const input = [
+      "01/06/1997",
+      "- [x] Take out the trash",
+      "02/06/1997",
+      "- [ ] Do the dishes",
+    ].join("\n");
+    assertResult(input, [
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(2, 0, 2, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(3, 0, 3, 19),
+      },
+    ]);
+  });
+
+  test("Finished list mixed with unfinished.", () => {
+    const input = [
+      "01/06/1997",
+      "- [x] Take out the trash",
+      "- [ ] Take out the trash",
+      "- [ ] Take out the trash",
+    ].join("\n");
+
+    assertResult(input, [
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(0, 0, 0, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(2, 0, 2, 24),
+      },
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(3, 0, 3, 24),
+      },
+    ]);
+
+    const input2 = [
+      "01/06/1997",
+      "- [ ] Take out the trash",
+      "- [x] Take out the trash",
+      "- [ ] Take out the trash",
+      "- [x] Take out the trash",
+    ].join("\n");
+
+    assertResult(input2, [
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(0, 0, 0, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(1, 0, 1, 24),
+      },
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(3, 0, 3, 24),
       },
     ]);
   });
