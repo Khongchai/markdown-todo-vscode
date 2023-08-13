@@ -8,6 +8,9 @@ type Cursor = {
   pos: number;
 };
 
+/**
+ * Don't judge me, mmk? I know this tokenizer is doing too much..
+ */
 export class DiagnosticsTokenizer extends DeclarativeValidator {
   private _text: string;
   private _previousCursor: Cursor;
@@ -33,26 +36,29 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
       const code = s.charCodeAt(this._cursor.pos);
       if (this._isLineBreak(code)) {
         yield this._handleLineBreak(s);
+        continue;
       }
 
       // Might be a date
-      else if (this._dateValidator[0](s.charCodeAt(this._cursor.pos))) {
+      if (this._dateValidator[0](s.charCodeAt(this._cursor.pos))) {
         const result = this._handleDate(s);
         if (result) {
           yield result;
         }
+        continue;
       }
 
       // Might be a todo item
-      else if (this._todoValidators.start[0](s.charCodeAt(this._cursor.pos))) {
+      if (this._todoValidators.start[0](s.charCodeAt(this._cursor.pos))) {
         const result = this._handleTodoItem(s);
         if (result) {
           yield result;
         }
+        continue;
       }
 
       // Are we closing off a section or is it just a comment?
-      else if (
+      if (
         this._markdownCommentStartValidator[0](s.charCodeAt(this._cursor.pos))
       ) {
         const commentStartToken = this._handleCommentStart(s);
@@ -60,31 +66,26 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
           yield commentStartToken;
 
           if (this._cursor.pos < s.length) {
-            const [commentEndToken, idents] = this._handleCommentEnd(s);
-            if (idents) {
-              if (commentEndToken && idents?.sectionEnd) {
-                yield commentEndToken;
-                yield idents.sectionEnd;
-              }
-            } else if (commentEndToken) {
-              yield commentEndToken;
-            }
+            yield* this._handleCommentEnd(s);
           }
         }
+        continue;
       }
 
       // Markdown code block begin/end (triple backticks)
-      else if (this._codeblockValidator[0](s.charCodeAt(this._cursor.pos))) {
+      if (this._codeblockValidator[0](s.charCodeAt(this._cursor.pos))) {
         const result = this._handleCodeBlock(s);
         if (result) {
           yield result;
         }
+        continue;
       }
 
       // other
       else {
         this._cursor.pos++;
         this._cursor.lineOffset++;
+        continue;
       }
     }
 
@@ -187,14 +188,17 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
     return Token.commentStart;
   }
 
-  private _handleCommentEnd(s: string): [
-    Token.commentEnd | null,
-    {
-      sectionEnd?: Token.sectionEndIdent;
-    } | null
-  ] {
-    let commentText = s[this._cursor.pos];
+  /**
+   * Returns a sequence of tokens within that comment.
+   *
+   */
+  private *_handleCommentEnd(s: string): Generator<Token> {
+    let commentString = s[this._cursor.pos];
+    let endCommentCount = 0;
 
+    // Keep going until we reach the end of the line.
+    // Markdown comment end can be on a different line, but for simplicity's sake, if
+    // it's not found within the same line, we just break early with `!this._isLineBreak`
     while (
       s.length > this._cursor.pos &&
       !this._isLineBreak(s.charCodeAt(this._cursor.pos))
@@ -205,27 +209,58 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
         const result = this._useValidator(s, this._markdownCommentEndValidator);
         if (!result) continue;
 
-        // remove last char because last char is the end comment marker.
-        const isSectionEndMarker =
-          commentText.substring(0, commentText.length - 1) ===
-          this._sectionEndText;
-        return isSectionEndMarker
-          ? [
-              Token.commentEnd,
-              {
-                sectionEnd: Token.sectionEndIdent,
-              },
-            ]
-          : [Token.commentEnd, null];
+        this._text = "-->";
+        yield Token.commentEnd;
+        endCommentCount++;
+        continue;
       }
 
       this._cursor.pos++;
       this._cursor.lineOffset++;
-      commentText += s[this._cursor.pos];
+      commentString += s[this._cursor.pos];
     }
 
-    // no closing comment found
-    return [null, null];
+    const validEnd = endCommentCount === 1;
+    if (!validEnd) return;
+
+    // last trailing character in a comment string is the first character in the end comment.
+    const commentContent = commentString.substring(0, commentString.length - 1);
+
+    if (commentContent === this._identsValidator.skip) {
+      this._text = commentContent;
+      yield Token.skipIdent;
+      return;
+    } else if (commentContent === this._identsValidator.endSection) {
+      this._text = commentContent;
+      yield Token.sectionEndIdent;
+      return;
+    }
+
+    // validate if the following is `moved xx/xx/xxxx`
+    let cur = 0;
+    let moved = "";
+    for (let i = 0; i < this._identsValidator.moved.length; i++, cur++) {
+      if (!this._identsValidator.moved[cur](commentContent.charCodeAt(cur))) {
+        return;
+      }
+
+      moved += commentContent[cur];
+    }
+
+    if (moved !== " moved ") return;
+    this._text = " moved ";
+    yield Token.movedIdent;
+
+    let date = "";
+    for (let i = 0; i < this._dateValidator.length; i++, cur++) {
+      if (!this._dateValidator[cur](commentContent.charCodeAt(cur))) {
+        return;
+      }
+      date += commentContent[cur];
+    }
+
+    this._text = date;
+    yield Token.date;
   }
 
   /**

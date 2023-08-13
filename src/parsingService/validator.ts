@@ -58,7 +58,11 @@ export abstract class DeclarativeValidator {
   protected readonly _markdownCommentEndValidator: CharValidator[] =
     DeclarativeValidator._validatorFromText("-->");
 
-  protected readonly _sectionEndText = " end section ";
+  protected readonly _identsValidator = {
+    endSection: " end section ",
+    skip: " skip ",
+    moved: DeclarativeValidator._validatorFromText(" moved "),
+  };
 
   protected _isDigit(ch: number): boolean {
     return ch >= CharacterCodes._0 && ch <= CharacterCodes._9;

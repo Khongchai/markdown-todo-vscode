@@ -114,7 +114,7 @@ describe("Comment identifiers", () => {
     });
 
     test("moved with date", () => {
-      runTest("<!-- moved:20/03/2023 -->", [
+      runTest("<!-- moved 20/03/2023 -->", [
         Token.commentStart,
         Token.commentEnd,
         Token.movedIdent,
@@ -124,7 +124,7 @@ describe("Comment identifiers", () => {
     });
 
     test("moved with other stuff", () => {
-      runTest("<!-- blegh moved:20/03/2023 blagh -->", [
+      runTest("<!-- blegh moved 20/03/2023 blagh -->", [
         Token.commentStart,
         Token.commentEnd,
         Token.lineEnd,
