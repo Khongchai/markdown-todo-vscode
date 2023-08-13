@@ -35,8 +35,8 @@ export interface ParserVisitor {
 /**
  * States of the current parser.
  */
-interface _ParsingState {
-  todoSections: DeadlineSection[];
+class _ParsingState {
+  todoSections!: DeadlineSection[];
   /**
    * true if the parser is currently parsing a todo item.
    *
@@ -51,15 +51,55 @@ interface _ParsingState {
    *
    * This is because the second todo item is not directly under the date.
    */
-  isParsingTodoSectionItem: boolean;
+  isParsingTodoSectionItem!: boolean;
   /**
    * true if the parser is currently inside a markdown code block (three backticks).
    */
-  isInsideCodeBlock: boolean;
+  isInsideCodeBlock!: boolean;
   /**
    * true if the parser is currently inside a markdown comment (<!-- -->).
    */
-  isInsideComment: boolean;
+  isInsideComment!: boolean;
+
+  constructor() {
+    this.reset();
+  }
+
+  /**
+   * check guard conditions.
+   */
+  public checkGuard(token: Token): "guard-hit" | "guard-miss" {
+    if (token === Token.tripleBackTick) {
+      this.isInsideCodeBlock = !this.isInsideCodeBlock;
+      return "guard-hit";
+    }
+
+    if (token === Token.commentStart) {
+      this.isInsideComment = true;
+      return "guard-hit";
+    }
+
+    if (token === Token.commentEnd) {
+      this.isInsideComment = false;
+      return "guard-hit";
+    }
+
+    if (
+      (this.isInsideCodeBlock || this.isInsideComment) &&
+      token !== Token.lineEnd
+    ) {
+      return "guard-hit";
+    }
+
+    return "guard-miss";
+  }
+
+  public reset() {
+    this.isParsingTodoSectionItem = false;
+    this.isInsideCodeBlock = false;
+    this.isInsideComment = false;
+    this.todoSections = [];
+  }
 }
 
 /**
@@ -74,6 +114,7 @@ export class DiagnosticsParser {
   private _isUsingControllledDate: boolean;
   private _tokenizer: DiagnosticsTokenizer;
   private _visitors: ParserVisitor[];
+  private _parsingState: _ParsingState;
 
   constructor({
     daySettings: settings,
@@ -92,6 +133,7 @@ export class DiagnosticsParser {
     };
     this._tokenizer = new DiagnosticsTokenizer();
     this._visitors = visitors ?? [];
+    this._parsingState = new _ParsingState();
   }
 
   /**
@@ -107,41 +149,17 @@ export class DiagnosticsParser {
       this._today = DateUtil.getDate();
     }
 
-    const state: _ParsingState = {
-      isParsingTodoSectionItem: false,
-      isInsideCodeBlock: false,
-      isInsideComment: false,
-      todoSections: [],
-    };
-
     for (const token of this._tokenizer.tokenize(text)) {
-      if (token === Token.tripleBackTick) {
-        state.isInsideCodeBlock = !state.isInsideCodeBlock;
-        continue;
-      }
-
-      if (token === Token.commentStart) {
-        state.isInsideComment = true;
-        continue;
-      }
-
-      if (token === Token.commentEnd) {
-        state.isInsideComment = false;
-        continue;
-      }
-
-      if (
-        (state.isInsideCodeBlock || state.isInsideComment) &&
-        token !== Token.lineEnd
-      ) {
+      const guardState = this._parsingState.checkGuard(token);
+      if (guardState === "guard-hit") {
         continue;
       }
 
       switch (token) {
         case Token.date: {
           // Check for duplicate dates on the same line.
-          if (state.todoSections.isNotEmpty()) {
-            const prevSection = state.todoSections.getLast();
+          if (this._parsingState.todoSections.isNotEmpty()) {
+            const prevSection = this._parsingState.todoSections.getLast();
             // Allow just one date per line. Ignore the rest on the same line, if any.
             if (
               prevSection.getTheLineDateIsOn() === this._tokenizer.getLine()
@@ -166,8 +184,8 @@ export class DiagnosticsParser {
             date
           );
 
-          state.todoSections.push(currentSection);
-          state.isParsingTodoSectionItem = true;
+          this._parsingState.todoSections.push(currentSection);
+          this._parsingState.isParsingTodoSectionItem = true;
 
           if (!diagnosticToReport) {
             continue;
@@ -183,8 +201,8 @@ export class DiagnosticsParser {
           continue;
         }
         case Token.finishedTodoItem:
-          if (state.isParsingTodoSectionItem) {
-            state.todoSections
+          if (this._parsingState.isParsingTodoSectionItem) {
+            this._parsingState.todoSections
               .getLast()
               .addTodoItem(
                 this._tokenizer.getText(),
@@ -195,8 +213,8 @@ export class DiagnosticsParser {
           continue;
         case Token.todoItem:
           // We need to check if we're inside of a date section.
-          if (state.isParsingTodoSectionItem) {
-            state.todoSections
+          if (this._parsingState.isParsingTodoSectionItem) {
+            this._parsingState.todoSections
               .getLast()
               .addTodoItem(
                 this._tokenizer.getText(),
@@ -206,14 +224,15 @@ export class DiagnosticsParser {
           }
           continue;
         case Token.newLine:
-          if (state.todoSections.isNotEmpty()) {
+          if (this._parsingState.todoSections.isNotEmpty()) {
             const prevLine = this._tokenizer.getLine() - 1;
             const justFinishedParsingDate =
-              prevLine === state.todoSections.getLast().getTheLineDateIsOn();
+              prevLine ===
+              this._parsingState.todoSections.getLast().getTheLineDateIsOn();
             if (justFinishedParsingDate) {
               this._visitors.forEach((v) =>
                 v.onNewLineAtDate?.(
-                  state.todoSections.getLast(),
+                  this._parsingState.todoSections.getLast(),
                   prevLine,
                   this._tokenizer.getPreviousLineOffset()
                 )
@@ -222,14 +241,15 @@ export class DiagnosticsParser {
           }
           continue;
         case Token.lineEnd:
-          if (state.todoSections.isNotEmpty()) {
+          if (this._parsingState.todoSections.isNotEmpty()) {
             const thisLine = this._tokenizer.getLine();
             const justFinishedParsingDate =
-              thisLine === state.todoSections.getLast().getTheLineDateIsOn();
+              thisLine ===
+              this._parsingState.todoSections.getLast().getTheLineDateIsOn();
             if (justFinishedParsingDate) {
               this._visitors.forEach((v) => {
                 v.onEndLineAtDate?.(
-                  state.todoSections.getLast(),
+                  this._parsingState.todoSections.getLast(),
                   thisLine,
                   this._tokenizer.getLineOffset()
                 );
@@ -238,14 +258,14 @@ export class DiagnosticsParser {
           }
           continue;
         case Token.sectionEndIdent:
-          state.isParsingTodoSectionItem = false;
+          this._parsingState.isParsingTodoSectionItem = false;
           continue;
         default:
           continue;
       }
     }
 
-    for (const section of state.todoSections) {
+    for (const section of this._parsingState.todoSections) {
       /**
        * If a section has > 1 list item, and that list item is not checked, we should highlight the date.
        */
@@ -259,6 +279,7 @@ export class DiagnosticsParser {
     }
 
     this._visitors.forEach((v) => v.onParseEnd?.());
+    this._parsingState.reset();
     return diagnostics;
   }
 
