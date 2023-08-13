@@ -1,5 +1,5 @@
 # Known bugs
-- [ ] If you zoom with ctrl and +/-, the text decoration for remaining days will disappear until you press something again.
+- [x] ~~If you zoom with ctrl and +/-, the text decoration for remaining days will disappear until you press something again.~~
 
 # To be fixed 02/08/2023
 - [x] fix unit test for decorator visitor

@@ -340,23 +340,49 @@ describe("Finished list don't get reported", () => {
 });
 
 describe("Skipping diagnostics", () => {
-  test("Skipping with skip", () => {
-    const input = [
-      "<!-- skip -->",
-      "01/06/1997",
-      "- [ ] Take out the trash",
-    ].join("\n");
+  describe("Skipping with skip", () => {
+    test("Just skip ident", () => {
+      const input = [
+        "<!-- skip -->",
+        "01/06/1997",
+        "- [ ] Take out the trash",
+      ].join("\n");
 
-    assertResult(input, []);
+      assertResult(input, []);
+    });
 
-    const input2 = [
-      "<!-- skip -->",
-      "<!-- got lazy -->",
-      "01/06/1997",
-      "- [ ] Take out the trash",
-    ].join("\n");
+    test("Skip ident with another comment", () => {
+      const input2 = [
+        "<!-- skip -->",
+        "<!-- got lazy -->",
+        "01/06/1997",
+        "- [ ] Take out the trash",
+      ].join("\n");
 
-    assertResult(input2, []);
+      assertResult(input2, []);
+    });
+
+    test("Skip ident with another comment and todo list", () => {
+      const input3 = [
+        "30/05/1997",
+        "- [ ] Take out the trash",
+        "<!-- skip -->",
+        "<!-- got lazy -->",
+        "01/06/1997",
+        "- [ ] Take out the trash",
+      ].join("\n");
+
+      assertResult(input3, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(0, 0, 0, 10),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(1, 0, 1, 24),
+        },
+      ]);
+    });
   });
 
   describe("Skipping with moved", () => {

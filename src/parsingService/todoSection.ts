@@ -1,6 +1,16 @@
 import { Diagnostic, Range } from "vscode";
 import { ParsedDateline, ReportedDiagnostic } from "./types";
 
+interface DeadlineSectionMeta {
+  /**
+   * Skip should not cause this deadline section to not be created, but just that nothing should be reported.
+   *
+   * This guards against the case where the upper section is a deadline and it attempts to swallows the lower section without
+   * proper closing.
+   */
+  skip?: boolean;
+}
+
 export class DeadlineSection {
   /**
    * The diagnostic associated with this date.
@@ -11,11 +21,13 @@ export class DeadlineSection {
   private _date: Date;
   private _containsUnfinishedItems?: boolean;
   private _potentialDiagnosticsRange?: Diagnostic;
+  private _meta?: DeadlineSectionMeta;
 
   constructor(
     sectionDiagnostics: ReportedDiagnostic | null,
     line: number,
-    date: Date
+    date: Date,
+    meta?: DeadlineSectionMeta
   ) {
     this._items = [];
     this._sectionDiagnostics = sectionDiagnostics;
@@ -23,12 +35,20 @@ export class DeadlineSection {
     this._date = date;
     this._containsUnfinishedItems = undefined;
     this._potentialDiagnosticsRange = undefined;
+    this._meta = meta;
+  }
+
+  public addDateDiagnostics(diagnostics: Diagnostic[]) {
+    if (this._meta?.skip) return;
+    if (!this._potentialDiagnosticsRange) return;
+    diagnostics.push(this._potentialDiagnosticsRange);
   }
 
   /**
    * @param diagnostics the array to add to
    */
   public addTodoItemsDiagnostics(diagnostics: Diagnostic[]): void {
+    if (this._meta?.skip) return;
     if (!this._sectionDiagnostics || !this._items.length) return;
 
     for (const item of this._items) {
@@ -65,11 +85,6 @@ export class DeadlineSection {
 
   public addPotentialDiagnostics(diagnostics: Diagnostic) {
     this._potentialDiagnosticsRange = diagnostics;
-  }
-
-  public addDateDiagnostics(diagnostics: Diagnostic[]) {
-    if (!this._potentialDiagnosticsRange) return;
-    diagnostics.push(this._potentialDiagnosticsRange);
   }
 
   /**

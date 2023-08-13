@@ -163,10 +163,6 @@ export class DiagnosticsParser {
 
       switch (token) {
         case Token.date: {
-          if (this._parsingState.skipNextSection) {
-            this._parsingState.skipNextSection = false;
-            continue;
-          }
           // Check for duplicate dates on the same line.
           if (this._parsingState.todoSections.isNotEmpty()) {
             const prevSection = this._parsingState.todoSections.getLast();
@@ -188,12 +184,18 @@ export class DiagnosticsParser {
           const date = this._getDate(this._tokenizer.getText());
           const diagnosticToReport = this._checkDiagnosticSeverity(date);
 
+          const skip = this._parsingState.skipNextSection;
+
           const currentSection = new DeadlineSection(
             diagnosticToReport,
             this._tokenizer.getLine(),
-            date
+            date,
+            {
+              skip,
+            }
           );
 
+          skip && (this._parsingState.skipNextSection = false);
           this._parsingState.todoSections.push(currentSection);
           this._parsingState.isParsingTodoSectionItem = true;
 
