@@ -75,3 +75,23 @@ If you a date is found to be inside a codeblock, it is ignored.
 - [ ] Task1
 - [ ] Task2
 \`\`\`
+
+# Skipping a Section
+
+If you want to skip a section for whatever reasons -- maybe you got lazy and wanted to just not do the thing, but want don't want to delete the list -- you can add a  `<!-- skip -->` comment anywhere before a section to opt it out of the deadline diagnostics.
+
+```md
+<!-- skip -->
+<!-- got lazy -->
+23/07/2023
+- [ ] Task1
+- [ ] Task2
+```
+
+# Moving a Section
+
+This is a bit different from skipping. This is a bit better. Instead of not doing it at all, you are `procrastinating`. 
+
+Add  `<!-- moved 20/03/2023 -->` before the section you want to move. The parser will take not of that section and will complain if the date you moved to does not exist.
+
+This works across all markdown files.

@@ -38,22 +38,6 @@ describe("Invalid list tokens", () => {
   test(case1, () => runTest(case1, [Token.lineEnd]));
 });
 
-describe("Match section end", () => {
-  test("end section only", () =>
-    runTest("<!-- end section -->", [
-      Token.commentStart,
-      Token.commentEnd,
-      Token.sectionEnd,
-      Token.lineEnd,
-    ]));
-  test("end section with other stuff", () =>
-    runTest("<!--blegh end section blagh-->", [
-      Token.commentStart,
-      Token.commentEnd,
-      Token.lineEnd,
-    ]));
-});
-
 describe("Match backtick code block", () => {
   test("```", () => runTest("```", [Token.tripleBackTick, Token.lineEnd]));
   // ignore if not 3 backticks.
@@ -81,4 +65,70 @@ describe("Match comment tokens", () => {
       Token.lineEnd,
     ]));
   test("<!", () => runTest("<!", [Token.lineEnd]));
+});
+
+describe("Comment identifiers", () => {
+  describe("end section", () => {
+    test("end section only", () =>
+      runTest("<!-- end section -->", [
+        Token.commentStart,
+        Token.commentEnd,
+        Token.sectionEndIdent,
+        Token.lineEnd,
+      ]));
+    test("end section with other stuff", () =>
+      runTest("<!--blegh end section blagh-->", [
+        Token.commentStart,
+        Token.commentEnd,
+        Token.lineEnd,
+      ]));
+  });
+
+  describe("skip", () => {
+    test("skip only", () => {
+      runTest("<!-- skip -->", [
+        Token.commentStart,
+        Token.commentEnd,
+        Token.skipIdent,
+        Token.lineEnd,
+      ]);
+    });
+
+    test("skip with other stuff", () => {
+      runTest("<!-- blegh skip blagh -->", [
+        Token.commentStart,
+        Token.commentEnd,
+        Token.lineEnd,
+      ]);
+    });
+  });
+
+  describe("moved", () => {
+    test("moved only", () => {
+      runTest("<!-- moved -->", [
+        Token.commentStart,
+        Token.commentEnd,
+        Token.movedIdent,
+        Token.lineEnd,
+      ]);
+    });
+
+    test("moved with date", () => {
+      runTest("<!-- moved:20/03/2023 -->", [
+        Token.commentStart,
+        Token.commentEnd,
+        Token.movedIdent,
+        Token.date,
+        Token.lineEnd,
+      ]);
+    });
+
+    test("moved with other stuff", () => {
+      runTest("<!-- blegh moved:20/03/2023 blagh -->", [
+        Token.commentStart,
+        Token.commentEnd,
+        Token.lineEnd,
+      ]);
+    });
+  });
 });

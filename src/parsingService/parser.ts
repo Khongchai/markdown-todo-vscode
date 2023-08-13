@@ -237,7 +237,7 @@ export class DiagnosticsParser {
             }
           }
           continue;
-        case Token.sectionEnd:
+        case Token.sectionEndIdent:
           state.isParsingTodoSectionItem = false;
           continue;
         default:

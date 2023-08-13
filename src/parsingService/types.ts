@@ -23,10 +23,14 @@ export const enum Token {
   // - [x]
   finishedTodoItem,
   lineEnd,
-  sectionEnd,
   tripleBackTick,
   commentStart,
   commentEnd,
+
+  // comment idents
+  sectionEndIdent,
+  skipIdent,
+  movedIdent,
 }
 
 export interface DaySettings {

@@ -60,11 +60,12 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
           yield commentStartToken;
 
           if (this._cursor.pos < s.length) {
-            const [commentEndToken, sectionEndToken] =
-              this._handleCommentEnd(s);
-            if (commentEndToken && sectionEndToken) {
-              yield commentEndToken;
-              yield sectionEndToken;
+            const [commentEndToken, idents] = this._handleCommentEnd(s);
+            if (idents) {
+              if (commentEndToken && idents?.sectionEnd) {
+                yield commentEndToken;
+                yield idents.sectionEnd;
+              }
             } else if (commentEndToken) {
               yield commentEndToken;
             }
@@ -186,9 +187,12 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
     return Token.commentStart;
   }
 
-  private _handleCommentEnd(
-    s: string
-  ): [Token.commentEnd | null, Token.sectionEnd | null] {
+  private _handleCommentEnd(s: string): [
+    Token.commentEnd | null,
+    {
+      sectionEnd?: Token.sectionEndIdent;
+    } | null
+  ] {
     let commentText = s[this._cursor.pos];
 
     while (
@@ -206,7 +210,12 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
           commentText.substring(0, commentText.length - 1) ===
           this._sectionEndText;
         return isSectionEndMarker
-          ? [Token.commentEnd, Token.sectionEnd]
+          ? [
+              Token.commentEnd,
+              {
+                sectionEnd: Token.sectionEndIdent,
+              },
+            ]
           : [Token.commentEnd, null];
       }
 
@@ -215,6 +224,7 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
       commentText += s[this._cursor.pos];
     }
 
+    // no closing comment found
     return [null, null];
   }
 
