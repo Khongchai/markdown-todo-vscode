@@ -186,14 +186,14 @@ export class DiagnosticsParser {
 
           const skip = this._parsingState.skipNextSection;
 
-          const currentSection = new DeadlineSection(
-            diagnosticToReport,
-            this._tokenizer.getLine(),
+          const currentSection = new DeadlineSection({
+            sectionDiagnostics: diagnosticToReport,
+            line: this._tokenizer.getLine(),
             date,
-            {
+            meta: {
               skip,
-            }
-          );
+            },
+          });
 
           skip && (this._parsingState.skipNextSection = false);
           this._parsingState.todoSections.push(currentSection);

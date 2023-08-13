@@ -21,14 +21,19 @@ export class DeadlineSection {
   private _date: Date;
   private _containsUnfinishedItems?: boolean;
   private _potentialDiagnosticsRange?: Diagnostic;
-  private _meta?: DeadlineSectionMeta;
+  private _meta: DeadlineSectionMeta;
 
-  constructor(
-    sectionDiagnostics: ReportedDiagnostic | null,
-    line: number,
-    date: Date,
-    meta?: DeadlineSectionMeta
-  ) {
+  constructor({
+    date,
+    line,
+    sectionDiagnostics,
+    meta,
+  }: {
+    sectionDiagnostics: ReportedDiagnostic | null;
+    line: number;
+    date: Date;
+    meta: DeadlineSectionMeta;
+  }) {
     this._items = [];
     this._sectionDiagnostics = sectionDiagnostics;
     this._location = line;
@@ -39,7 +44,7 @@ export class DeadlineSection {
   }
 
   public addDateDiagnostics(diagnostics: Diagnostic[]) {
-    if (this._meta?.skip) return;
+    if (this._meta.skip) return;
     if (!this._potentialDiagnosticsRange) return;
     diagnostics.push(this._potentialDiagnosticsRange);
   }
