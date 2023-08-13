@@ -1,5 +1,11 @@
 import { DiagnosticSeverity } from "vscode";
 
+export interface SectionMoveDetail {
+  dateString: string;
+  commentLine: number;
+  commentLength: number;
+}
+
 export interface ParsedDateline {
   content: string;
   line: number;

@@ -1,7 +1,12 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
 import DateUtil from "./utils";
 import { DiagnosticsTokenizer } from "./tokenizer";
-import { DaySettings, ReportedDiagnostic, Token } from "./types";
+import {
+  DaySettings,
+  ReportedDiagnostic,
+  SectionMoveDetail,
+  Token,
+} from "./types";
 import { DeadlineSection as DeadlineSection } from "./todoSection";
 import "../protoExtensions/protoExtensions";
 
@@ -33,9 +38,9 @@ export interface ParserVisitor {
 }
 
 /**
- * States of the current parser.
+ * A guard state of the current parsing process.
  */
-class _ParsingState {
+class _ParsingGuard {
   todoSections!: DeadlineSection[];
   /**
    * true if the parser is currently parsing a todo item.
@@ -66,6 +71,17 @@ class _ParsingState {
    */
   skipNextSection!: boolean;
 
+  /**
+   * true if the parser marks the next immediate section as moved
+   */
+  moveNextSection!: boolean;
+  /**
+   * This is only relevant & useful if moveNextSection is true
+   */
+  moveCommentDetail!: SectionMoveDetail & {
+    reset(): void;
+  };
+
   constructor() {
     this.reset();
   }
@@ -73,7 +89,10 @@ class _ParsingState {
   /**
    * check guard conditions.
    */
-  public checkGuard(token: Token): "hit" | "miss" {
+  public checkGuardAndUpdateState(
+    token: Token,
+    tokenizer: DiagnosticsTokenizer
+  ): "hit" | "miss" {
     switch (token) {
       case Token.tripleBackTick:
         this.isInsideCodeBlock = !this.isInsideCodeBlock;
@@ -86,6 +105,11 @@ class _ParsingState {
         return "hit";
       case Token.skipIdent:
         this.skipNextSection = true;
+        return "hit";
+      case Token.movedIdent:
+        this.moveNextSection = true;
+        this.moveCommentDetail.commentLine = tokenizer.getLine();
+        this.moveCommentDetail.commentLength = tokenizer.getLineOffset();
         return "hit";
       default:
         if (
@@ -104,7 +128,18 @@ class _ParsingState {
     this.isParsingTodoSectionItem = false;
     this.isInsideCodeBlock = false;
     this.isInsideComment = false;
+    this.moveNextSection = false;
     this.todoSections = [];
+    this.moveCommentDetail = {
+      dateString: "",
+      commentLength: 0,
+      commentLine: 0,
+      reset: function () {
+        this.dateString = "";
+        this.commentLength = 0;
+        this.commentLine = 0;
+      },
+    };
   }
 }
 
@@ -120,7 +155,7 @@ export class DiagnosticsParser {
   private _isUsingControllledDate: boolean;
   private _tokenizer: DiagnosticsTokenizer;
   private _visitors: ParserVisitor[];
-  private _parsingState: _ParsingState;
+  private _parsingState: _ParsingGuard;
 
   constructor({
     daySettings: settings,
@@ -139,7 +174,7 @@ export class DiagnosticsParser {
     };
     this._tokenizer = new DiagnosticsTokenizer();
     this._visitors = visitors ?? [];
-    this._parsingState = new _ParsingState();
+    this._parsingState = new _ParsingGuard();
   }
 
   /**
@@ -156,13 +191,26 @@ export class DiagnosticsParser {
     }
 
     for (const token of this._tokenizer.tokenize(text)) {
-      const guardState = this._parsingState.checkGuard(token);
+      const guardState = this._parsingState.checkGuardAndUpdateState(
+        token,
+        this._tokenizer
+      );
       if (guardState === "hit") {
         continue;
       }
 
       switch (token) {
         case Token.date: {
+          if (
+            this._parsingState.isInsideComment &&
+            this._parsingState.moveNextSection &&
+            this._parsingState.moveCommentDetail.commentLine ===
+              this._tokenizer.getLine()
+          ) {
+            this._parsingState.moveCommentDetail.dateString =
+              this._tokenizer.getText();
+            continue;
+          }
           // Check for duplicate dates on the same line.
           if (this._parsingState.todoSections.isNotEmpty()) {
             const prevSection = this._parsingState.todoSections.getLast();
@@ -185,6 +233,8 @@ export class DiagnosticsParser {
           const diagnosticToReport = this._checkDiagnosticSeverity(date);
 
           const skip = this._parsingState.skipNextSection;
+          const moved = this._parsingState.moveNextSection;
+          const moveDetail = this._parsingState.moveCommentDetail;
 
           const currentSection = new DeadlineSection({
             sectionDiagnostics: diagnosticToReport,
@@ -192,9 +242,12 @@ export class DiagnosticsParser {
             date,
             meta: {
               skip,
+              move: moved && moveDetail ? moveDetail : false,
             },
           });
 
+          moved && (this._parsingState.moveNextSection = false);
+          moveDetail && this._parsingState.moveCommentDetail.reset();
           skip && (this._parsingState.skipNextSection = false);
           this._parsingState.todoSections.push(currentSection);
           this._parsingState.isParsingTodoSectionItem = true;

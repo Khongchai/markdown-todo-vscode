@@ -1,14 +1,25 @@
-import { Diagnostic, Range } from "vscode";
-import { ParsedDateline, ReportedDiagnostic } from "./types";
+import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
+import { ParsedDateline, ReportedDiagnostic, SectionMoveDetail } from "./types";
 
-interface DeadlineSectionMeta {
+interface SkipSwitch {
   /**
    * Skip should not cause this deadline section to not be created, but just that nothing should be reported.
    *
    * This guards against the case where the upper section is a deadline and it attempts to swallows the lower section without
    * proper closing.
    */
-  skip?: boolean;
+  skip: boolean;
+  /** 
+  * # moving validation
+  * when moved section is asked to return diagnostics,
+  * check if its meta.move is truthy, if so, it should check if its items is down to zero, if it is, return true
+  * if false, it has not been moved, should return the diagnostics of the line the comment is on.
+
+  * # moving
+  * moved section "deposits" its items to a move bank. The move bank is a map of the date string, and the section requesting its
+  * items to be vacated. Once the section to be deposited to is found, vacate all items of the registered section to the depositee.
+  */
+  move: SectionMoveDetail | false;
 }
 
 export class DeadlineSection {
@@ -21,7 +32,7 @@ export class DeadlineSection {
   private _date: Date;
   private _containsUnfinishedItems?: boolean;
   private _potentialDiagnosticsRange?: Diagnostic;
-  private _meta: DeadlineSectionMeta;
+  private _skipConditions: SkipSwitch;
 
   constructor({
     date,
@@ -32,7 +43,7 @@ export class DeadlineSection {
     sectionDiagnostics: ReportedDiagnostic | null;
     line: number;
     date: Date;
-    meta: DeadlineSectionMeta;
+    meta: SkipSwitch;
   }) {
     this._items = [];
     this._sectionDiagnostics = sectionDiagnostics;
@@ -40,12 +51,26 @@ export class DeadlineSection {
     this._date = date;
     this._containsUnfinishedItems = undefined;
     this._potentialDiagnosticsRange = undefined;
-    this._meta = meta;
+    this._skipConditions = meta;
   }
 
   public addDateDiagnostics(diagnostics: Diagnostic[]) {
-    if (this._meta.skip) return;
+    if (this._skipConditions.skip) return;
+
+    if (this._skipConditions.move && this._skipConditions.move.dateString) {
+      if (this._items.length === 0) return;
+      const { commentLength, commentLine } = this._skipConditions.move;
+      diagnostics.push({
+        message: "Not all items are moved to the new date.",
+        range: new Range(commentLine, 0, commentLine, commentLength),
+        severity: DiagnosticSeverity.Error,
+      });
+      // don't add the diagnostics to the date itself.
+      return;
+    }
+
     if (!this._potentialDiagnosticsRange) return;
+
     diagnostics.push(this._potentialDiagnosticsRange);
   }
 
@@ -53,7 +78,28 @@ export class DeadlineSection {
    * @param diagnostics the array to add to
    */
   public addTodoItemsDiagnostics(diagnostics: Diagnostic[]): void {
-    if (this._meta?.skip) return;
+    if (this._skipConditions.skip) return;
+
+    if (this._skipConditions.move && this._skipConditions.move.dateString) {
+      if (this._items.length === 0) return;
+      const { commentLength, commentLine } = this._skipConditions.move;
+      // items are not vacated, report diagnostics to the comment line and all items not vacated
+      diagnostics.push({
+        message: "Not all items are moved to the new date.",
+        range: new Range(commentLine, 0, commentLine, commentLength),
+        severity: DiagnosticSeverity.Error,
+      });
+      for (const item of this._items) {
+        if (item.isChecked) continue;
+        diagnostics.push({
+          message: "This item is not moved to the new date",
+          range: new Range(item.line, 0, item.line, item.content.length),
+          severity: DiagnosticSeverity.Error,
+        });
+      }
+      return;
+    }
+
     if (!this._sectionDiagnostics || !this._items.length) return;
 
     for (const item of this._items) {

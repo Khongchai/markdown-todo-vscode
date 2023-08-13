@@ -386,7 +386,7 @@ describe("Skipping diagnostics", () => {
   });
 
   describe("Skipping with moved", () => {
-    test("Moved without date", () => {
+    test("Moved without date - incorrect syntax", () => {
       const input = [
         "<!-- moved -->",
         "01/06/1997",
@@ -396,10 +396,40 @@ describe("Skipping diagnostics", () => {
       assertResult(input, [
         {
           severity: DiagnosticSeverity.Error,
-          // expect error because moved expect a date
-          range: new Range(0, 0, 0, "<!-- moved -->".length),
+          range: new Range(1, 0, 1, 10),
         },
-        // expect no more errors because moved is added (we show the error on the moved line)
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(2, 0, 2, 24),
+        },
+      ]);
+    });
+
+    test("Moved with date - correct syntax - the date to moved to does not exist", () => {
+      const input = [
+        "<!-- moved 09/10/1997 -->",
+        "01/08/1997",
+        "- [ ] Take out the trash",
+        "05/09/1997",
+        "- [ ] Take out the trash",
+        "08/09/1997",
+        "- [ ] Take out the trash",
+      ].join("\n");
+
+      // three lines highlighted, the moved line and the two lines after it
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(0, 0, 0, "<!-- moved 09/10/1997 -->".length),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(1, 0, 1, 10),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(2, 0, 2, 24),
+        },
       ]);
     });
 
@@ -414,25 +444,6 @@ describe("Skipping diagnostics", () => {
         {
           severity: DiagnosticSeverity.Error,
           range: new Range(0, 0, 0, "<!-- moved 01/06/1997 -->".length),
-        },
-      ]);
-    });
-
-    test("Moved with date - correct syntax - the date to moved to does not exist", () => {
-      const input = [
-        "<!-- moved 09/06/1997 -->",
-        "01/06/1997",
-        "- [ ] Take out the trash",
-        "05/06/1997",
-        "- [ ] Take out the trash",
-        "08/06/1997",
-        "- [ ] Take out the trash",
-      ].join("\n");
-
-      assertResult(input, [
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(0, 0, 0, "<!-- moved 09/06/1997 -->".length),
         },
       ]);
     });
