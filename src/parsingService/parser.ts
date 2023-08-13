@@ -61,6 +61,11 @@ class _ParsingState {
    */
   isInsideComment!: boolean;
 
+  /**
+   * true if the parser should skip the immediate next section
+   */
+  skipNextSection!: boolean;
+
   constructor() {
     this.reset();
   }
@@ -68,33 +73,34 @@ class _ParsingState {
   /**
    * check guard conditions.
    */
-  public checkGuard(token: Token): "guard-hit" | "guard-miss" {
-    if (token === Token.tripleBackTick) {
-      this.isInsideCodeBlock = !this.isInsideCodeBlock;
-      return "guard-hit";
-    }
+  public checkGuard(token: Token): "hit" | "miss" {
+    switch (token) {
+      case Token.tripleBackTick:
+        this.isInsideCodeBlock = !this.isInsideCodeBlock;
+        return "hit";
+      case Token.commentStart:
+        this.isInsideComment = true;
+        return "hit";
+      case Token.commentEnd:
+        this.isInsideComment = false;
+        return "hit";
+      case Token.skipIdent:
+        this.skipNextSection = true;
+        return "hit";
+      default:
+        if (
+          (this.isInsideCodeBlock || this.isInsideComment) &&
+          token !== Token.lineEnd
+        ) {
+          return "hit";
+        }
 
-    if (token === Token.commentStart) {
-      this.isInsideComment = true;
-      return "guard-hit";
+        return "miss";
     }
-
-    if (token === Token.commentEnd) {
-      this.isInsideComment = false;
-      return "guard-hit";
-    }
-
-    if (
-      (this.isInsideCodeBlock || this.isInsideComment) &&
-      token !== Token.lineEnd
-    ) {
-      return "guard-hit";
-    }
-
-    return "guard-miss";
   }
 
   public reset() {
+    this.skipNextSection = false;
     this.isParsingTodoSectionItem = false;
     this.isInsideCodeBlock = false;
     this.isInsideComment = false;
@@ -151,12 +157,16 @@ export class DiagnosticsParser {
 
     for (const token of this._tokenizer.tokenize(text)) {
       const guardState = this._parsingState.checkGuard(token);
-      if (guardState === "guard-hit") {
+      if (guardState === "hit") {
         continue;
       }
 
       switch (token) {
         case Token.date: {
+          if (this._parsingState.skipNextSection) {
+            this._parsingState.skipNextSection = false;
+            continue;
+          }
           // Check for duplicate dates on the same line.
           if (this._parsingState.todoSections.isNotEmpty()) {
             const prevSection = this._parsingState.todoSections.getLast();
