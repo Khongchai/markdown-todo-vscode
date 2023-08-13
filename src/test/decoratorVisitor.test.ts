@@ -1,8 +1,18 @@
 import { DateParsedEvent, DiagnosticsParser } from "../parsingService/parser";
+import { DeadlineSection } from "../parsingService/todoSection";
 import DateUtil from "../parsingService/utils";
 
 // Modify this later when we have more visitors.
 type Expected = Parameters<DateParsedEvent>;
+
+// using mock deadline section to make sure that we sync the parameters with the real DateParsedEvent.
+const mockDeadlineSection = (date: Date): DeadlineSection => {
+  const mockedDeadlineSection: DeadlineSection = Object.create(
+    DeadlineSection.prototype
+  );
+  mockedDeadlineSection.getDate = jest.fn(() => date);
+  return mockedDeadlineSection;
+};
 
 function runTest(
   input: string,
@@ -25,22 +35,40 @@ function runTest(
   parser.parse(input);
 
   expect(results.length).toBe(expecteds.length);
-  expect(results).toStrictEqual(expecteds);
+  for (let i = 0; i < results.length; i++) {
+    expect(results[i][0].getDate()).toStrictEqual(expecteds[i][0].getDate());
+    expect(results[i][1]).toStrictEqual(expecteds[i][1]);
+    expect(results[i][2]).toStrictEqual(expecteds[i][2]);
+  }
 }
 
 describe("visitorsTest", () => {
   it("tests a single date", () => {
-    const input = ["01/06/1997   ", "hello"].join("\n");
+    const input = ["01/06/1997   ", "- [ ] Something"].join("\n");
 
-    runTest(input, [[DateUtil.getDateLikeNormalPeople(1997, 6, 1), 0, 13]]);
+    runTest(input, [
+      [
+        mockDeadlineSection(DateUtil.getDateLikeNormalPeople(1997, 6, 1)),
+        0,
+        13,
+      ],
+    ]);
   });
 
   it("tests multiple dates", () => {
     const input = ["01/06/1997   ", "hello", "31/12/1997"].join("\n");
 
     runTest(input, [
-      [DateUtil.getDateLikeNormalPeople(1997, 6, 1), 0, 13],
-      [DateUtil.getDateLikeNormalPeople(1997, 12, 31), 2, 10],
+      [
+        mockDeadlineSection(DateUtil.getDateLikeNormalPeople(1997, 6, 1)),
+        0,
+        13,
+      ],
+      [
+        mockDeadlineSection(DateUtil.getDateLikeNormalPeople(1997, 12, 31)),
+        2,
+        10,
+      ],
     ]);
   });
 

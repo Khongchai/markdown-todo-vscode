@@ -3,11 +3,15 @@ export default class DateUtil {
    * A buffer so that I can pass the date paramter with month starting at
    * 1 like normal people.
    */
-  static getDateLikeNormalPeople(year: number, month: number, day: number) {
+  static getDateLikeNormalPeople(
+    year: number,
+    month: number,
+    day: number
+  ): Date {
     return new Date(year, month - 1, day);
   }
 
-  static getDate() {
+  static getDate(): Date {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), today.getDate());
   }
