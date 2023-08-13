@@ -239,12 +239,13 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
     // validate if the following is `moved xx/xx/xxxx`
     let cur = 0;
     let moved = "";
-    for (let i = 0; i < this._identsValidator.moved.length; i++, cur++) {
-      if (!this._identsValidator.moved[cur](commentContent.charCodeAt(cur))) {
+    for (let i = 0; i < this._identsValidator.moved.length; i++) {
+      if (!this._identsValidator.moved[i](commentContent.charCodeAt(i))) {
         return;
       }
 
-      moved += commentContent[cur];
+      moved += commentContent[i];
+      cur++;
     }
 
     if (moved !== " moved ") return;
@@ -253,7 +254,7 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
 
     let date = "";
     for (let i = 0; i < this._dateValidator.length; i++, cur++) {
-      if (!this._dateValidator[cur](commentContent.charCodeAt(cur))) {
+      if (!this._dateValidator[i](commentContent.charCodeAt(cur))) {
         return;
       }
       date += commentContent[cur];
