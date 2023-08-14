@@ -450,6 +450,30 @@ describe("Skipping diagnostics", () => {
       ]);
     });
 
+    test("Moved with date - correct syntax - the date to moved to exists, and is not overdue", () => {
+      const input = [
+        "<!-- moved 09/08/1997 -->",
+        "01/06/1997",
+        "- [ ] Take out the trash",
+        "05/06/1997",
+        "- [ ] Take out the trash",
+        "09/08/1997",
+        "- [ ] Take out the trash",
+      ].join("\n");
+
+      assertResult(input, [
+        // The moved line should not be highlighted. The highlighted one is the one that is not moved.
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(3, 0, 3, 10),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(4, 0, 4, 24),
+        },
+      ]);
+    });
+
     test("Moved with date - correct syntax - the date to moved to exists, but is overdue", () => {
       const input = [
         "<!-- moved 09/06/1997 -->",
@@ -464,23 +488,13 @@ describe("Skipping diagnostics", () => {
       assertResult(input, [
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(6, 0, 6, "09/06/1997".length),
+          range: new Range(5, 0, 5, 10),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(6, 0, 6, 24),
         },
       ]);
-    });
-
-    test("Moved with date - correct syntax - the date to moved to exists, and is not overdue", () => {
-      const input = [
-        "<!-- moved 09/08/1997 -->",
-        "01/06/1997",
-        "- [ ] Take out the trash",
-        "05/06/1997",
-        "- [ ] Take out the trash",
-        "09/08/1997",
-        "- [ ] Take out the trash",
-      ].join("\n");
-
-      assertResult(input, []);
     });
 
     test("Moved with date - invalid syntax", () => {
