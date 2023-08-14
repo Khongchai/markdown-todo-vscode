@@ -30,7 +30,10 @@ export class DeadlineSection {
   private _sectionDiagnostics: ReportedDiagnostic | null;
   private _items: ParsedDateline[];
   private _location: number;
-  private _date: Date;
+  private _date: {
+    instance: Date;
+    originalString: string;
+  };
   private _containsUnfinishedItems?: boolean;
   private _potentialDiagnosticsRange?: Diagnostic;
   private _skipConditions: SkipSwitch;
@@ -43,7 +46,10 @@ export class DeadlineSection {
   }: {
     sectionDiagnostics: ReportedDiagnostic | null;
     line: number;
-    date: Date;
+    date: {
+      instance: Date;
+      originalString: string;
+    };
     meta: SkipSwitch;
   }) {
     this._items = [];
@@ -55,6 +61,9 @@ export class DeadlineSection {
     this._skipConditions = meta;
   }
 
+  /**
+   * Will either add the diagnostics to the line the date is on, or to the move comment.
+   */
   public addDateDiagnostics(diagnostics: Diagnostic[]) {
     if (this._skipConditions.skip) return;
 
@@ -62,14 +71,25 @@ export class DeadlineSection {
       this._skipConditions.move && !!this._skipConditions.move.dateString;
     if (registeredForExtraction) {
       if (this._items.length === 0) return;
-      const { commentLength, commentLine } = this._skipConditions
+
+      const { commentLength, commentLine, dateString } = this._skipConditions
         .move as SectionMoveDetail;
-      // add one diagnostics to the comment line
-      diagnostics.push({
-        message: messages.notAllItemsMoved,
-        range: new Range(commentLine, 0, commentLine, commentLength),
-        severity: DiagnosticSeverity.Error,
-      });
+
+      const registeredToItself = dateString === this._date.originalString;
+      if (registeredToItself) {
+        diagnostics.push({
+          range: new Range(commentLine, 0, commentLine, commentLength),
+          message: messages.selfRegistered,
+          severity: DiagnosticSeverity.Information,
+        });
+      } else {
+        // add one diagnostics to the comment line
+        diagnostics.push({
+          message: messages.notAllItemsMoved,
+          range: new Range(commentLine, 0, commentLine, commentLength),
+          severity: DiagnosticSeverity.Error,
+        });
+      }
 
       // Don't add the diagnostics to the date itself to make it clear that diagnostics report context has changed.
       return;
@@ -159,7 +179,7 @@ export class DeadlineSection {
   }
 
   public getDate(): Date {
-    return this._date;
+    return this._date.instance;
   }
 
   public get containsUnfinishedItems() {

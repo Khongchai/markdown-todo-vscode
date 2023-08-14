@@ -1,5 +1,8 @@
 import { DeadlineSection } from "./todoSection";
 
+/**
+ * Represents an account number; the date string
+ */
 export type AccountNumber = string;
 
 /**

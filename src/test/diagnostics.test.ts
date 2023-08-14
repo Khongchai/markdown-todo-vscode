@@ -437,9 +437,15 @@ describe("Skipping diagnostics", () => {
       ].join("\n");
 
       assertResult(input, [
+        // highlighted because the moved date is the same as the date of the section
+        {
+          severity: DiagnosticSeverity.Information,
+          range: new Range(0, 0, 0, "<!-- moved 01/06/1997 -->".length),
+        },
+        // highlighted because the date is registered to be moved but the move wasn't successful.
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(0, 0, 0, "<!-- moved 01/06/1997 -->".length),
+          range: new Range(2, 0, 2, 24),
         },
       ]);
     });

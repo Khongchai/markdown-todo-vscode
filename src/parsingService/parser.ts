@@ -10,6 +10,7 @@ import {
 import { DeadlineSection as DeadlineSection } from "./todoSection";
 import "../protoExtensions/protoExtensions";
 import MoveBankImpl, { MoveBank } from "./moveBank";
+import { messages } from "./constants";
 
 export type DateParsedEvent = (
   section: DeadlineSection,
@@ -245,7 +246,10 @@ export class DiagnosticsParser {
           const currentSection = new DeadlineSection({
             sectionDiagnostics: diagnosticToReport,
             line: this._tokenizer.getLine(),
-            date,
+            date: {
+              instance: date,
+              originalString: this._tokenizer.getText(),
+            },
             meta: {
               skip,
               move: moved && moveDetail ? { ...moveDetail } : false,
@@ -253,19 +257,20 @@ export class DiagnosticsParser {
           });
 
           if (this._parsingState.moveNextSection) {
+            const commentDetail = this._parsingState.moveCommentDetail;
             this._moveBank.registerTransfer({
-              key: this._parsingState.moveCommentDetail.dateString,
+              key: commentDetail.dateString,
               value: currentSection,
             });
             this._parsingState.moveNextSection = false;
-            this._parsingState.moveCommentDetail.reset();
+            commentDetail.reset();
             this._parsingState.skipNextSection = false;
-          } else {
-            this._moveBank.registerAccount({
-              key: this._tokenizer.getText(),
-              value: currentSection,
-            });
           }
+
+          this._moveBank.registerAccount({
+            key: this._tokenizer.getText(),
+            value: currentSection,
+          });
 
           this._parsingState.todoSections.push(currentSection);
           this._parsingState.isParsingTodoSectionItem = true;
