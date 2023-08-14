@@ -408,7 +408,7 @@ describe("Skipping diagnostics", () => {
     test("Moved with date - correct syntax - the date to moved to does not exist", () => {
       const input = [
         "<!-- moved 09/10/1997 -->",
-        "01/08/1997",
+        "15/08/1997",
         "- [ ] Take out the trash",
         "05/09/1997",
         "- [ ] Take out the trash",
@@ -416,15 +416,11 @@ describe("Skipping diagnostics", () => {
         "- [ ] Take out the trash",
       ].join("\n");
 
-      // three lines highlighted, the moved line and the two lines after it
+      // two lines highlighted, the moved line and the item line in the next section without its date.
       assertResult(input, [
         {
           severity: DiagnosticSeverity.Error,
           range: new Range(0, 0, 0, "<!-- moved 09/10/1997 -->".length),
-        },
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(1, 0, 1, 10),
         },
         {
           severity: DiagnosticSeverity.Error,

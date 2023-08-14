@@ -93,3 +93,8 @@ export const enum CharacterCodes {
 }
 
 export const datePattern = "dd/mm/yyyy";
+
+export const messages = {
+  notAllItemsMoved: "Not all items are moved to the new date.",
+  itemNotMoved: "This item is not moved to the new date.",
+};

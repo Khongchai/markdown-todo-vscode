@@ -9,6 +9,7 @@ import {
 } from "./types";
 import { DeadlineSection as DeadlineSection } from "./todoSection";
 import "../protoExtensions/protoExtensions";
+import MoveBankImpl, { MoveBank } from "./moveBank";
 
 export type DateParsedEvent = (
   section: DeadlineSection,
@@ -156,6 +157,7 @@ export class DiagnosticsParser {
   private _tokenizer: DiagnosticsTokenizer;
   private _visitors: ParserVisitor[];
   private _parsingState: _ParsingGuard;
+  private _moveBank: MoveBank;
 
   constructor({
     daySettings: settings,
@@ -175,6 +177,7 @@ export class DiagnosticsParser {
     this._tokenizer = new DiagnosticsTokenizer();
     this._visitors = visitors ?? [];
     this._parsingState = new _ParsingGuard();
+    this._moveBank = new MoveBankImpl();
   }
 
   /**
@@ -201,8 +204,11 @@ export class DiagnosticsParser {
 
       switch (token) {
         case Token.date: {
+          // This means that we have found a requested date to deposit the next section to.
           if (
-            this._parsingState.isInsideComment &&
+            // cannot use insideCommentCheck because the tokenization order
+            // is not guaranteed
+            // this._parsingState.isInsideComment &&
             this._parsingState.moveNextSection &&
             this._parsingState.moveCommentDetail.commentLine ===
               this._tokenizer.getLine()
@@ -242,13 +248,25 @@ export class DiagnosticsParser {
             date,
             meta: {
               skip,
-              move: moved && moveDetail ? moveDetail : false,
+              move: moved && moveDetail ? { ...moveDetail } : false,
             },
           });
 
-          moved && (this._parsingState.moveNextSection = false);
-          moveDetail && this._parsingState.moveCommentDetail.reset();
-          skip && (this._parsingState.skipNextSection = false);
+          if (this._parsingState.moveNextSection) {
+            this._moveBank.registerTransfer({
+              key: this._parsingState.moveCommentDetail.dateString,
+              value: currentSection,
+            });
+            this._parsingState.moveNextSection = false;
+            this._parsingState.moveCommentDetail.reset();
+            this._parsingState.skipNextSection = false;
+          } else {
+            this._moveBank.registerAccount({
+              key: this._tokenizer.getText(),
+              value: currentSection,
+            });
+          }
+
           this._parsingState.todoSections.push(currentSection);
           this._parsingState.isParsingTodoSectionItem = true;
 
@@ -329,6 +347,8 @@ export class DiagnosticsParser {
           continue;
       }
     }
+
+    this._moveBank.applyTransfers();
 
     for (const section of this._parsingState.todoSections) {
       /**

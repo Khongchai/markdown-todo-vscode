@@ -1,5 +1,6 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
 import { ParsedDateline, ReportedDiagnostic, SectionMoveDetail } from "./types";
+import { datePattern, messages } from "./constants";
 
 interface SkipSwitch {
   /**
@@ -16,7 +17,7 @@ interface SkipSwitch {
   * if false, it has not been moved, should return the diagnostics of the line the comment is on.
 
   * # moving
-  * moved section "deposits" its items to a move bank. The move bank is a map of the date string, and the section requesting its
+  * moved section "registers" its items to be desposited to another to a "move bank". The move bank is a map of the date string, and the section requesting its
   * items to be vacated. Once the section to be deposited to is found, vacate all items of the registered section to the depositee.
   */
   move: SectionMoveDetail | false;
@@ -57,15 +58,20 @@ export class DeadlineSection {
   public addDateDiagnostics(diagnostics: Diagnostic[]) {
     if (this._skipConditions.skip) return;
 
-    if (this._skipConditions.move && this._skipConditions.move.dateString) {
+    const registeredForExtraction: boolean =
+      this._skipConditions.move && !!this._skipConditions.move.dateString;
+    if (registeredForExtraction) {
       if (this._items.length === 0) return;
-      const { commentLength, commentLine } = this._skipConditions.move;
+      const { commentLength, commentLine } = this._skipConditions
+        .move as SectionMoveDetail;
+      // add one diagnostics to the comment line
       diagnostics.push({
-        message: "Not all items are moved to the new date.",
+        message: messages.notAllItemsMoved,
         range: new Range(commentLine, 0, commentLine, commentLength),
         severity: DiagnosticSeverity.Error,
       });
-      // don't add the diagnostics to the date itself.
+
+      // Don't add the diagnostics to the date itself to make it clear that diagnostics report context has changed.
       return;
     }
 
@@ -80,19 +86,14 @@ export class DeadlineSection {
   public addTodoItemsDiagnostics(diagnostics: Diagnostic[]): void {
     if (this._skipConditions.skip) return;
 
-    if (this._skipConditions.move && this._skipConditions.move.dateString) {
+    const registeredForExtraction =
+      this._skipConditions.move && this._skipConditions.move.dateString;
+    if (registeredForExtraction) {
       if (this._items.length === 0) return;
-      const { commentLength, commentLine } = this._skipConditions.move;
-      // items are not vacated, report diagnostics to the comment line and all items not vacated
-      diagnostics.push({
-        message: "Not all items are moved to the new date.",
-        range: new Range(commentLine, 0, commentLine, commentLength),
-        severity: DiagnosticSeverity.Error,
-      });
       for (const item of this._items) {
         if (item.isChecked) continue;
         diagnostics.push({
-          message: "This item is not moved to the new date",
+          message: messages.itemNotMoved,
           range: new Range(item.line, 0, item.line, item.content.length),
           severity: DiagnosticSeverity.Error,
         });
@@ -132,6 +133,18 @@ export class DeadlineSection {
       this._containsUnfinishedItems = true;
     }
     this._items.push({ content: item, line, isChecked });
+  }
+
+  /**
+   * Extract the parsed items from this section.
+   */
+  public extractItemsTo(section: DeadlineSection) {
+    if (this._items.length === 0) return;
+    const items = this._items;
+    this._items = [];
+    for (const item of items) {
+      section.addTodoItem(item.content, item.line, item.isChecked);
+    }
   }
 
   public addPotentialDiagnostics(diagnostics: Diagnostic) {
