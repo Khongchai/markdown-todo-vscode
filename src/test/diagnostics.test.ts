@@ -505,42 +505,30 @@ describe("Skipping diagnostics", () => {
       ]);
     });
 
-    // TODO @khongchai continue with this.
     test("Moved with date - correct syntax - the date to moved to exists, is not overdue, but the item to moved to does not contain the same item", () => {
       const input = [
-        "<!-- moved 09/06/1997 -->",
-        "01/06/1997",
+        "<!-- moved 09/10/1997 -->",
+        "07/10/1997",
         "- [ ] Take out the trash",
-        "05/06/1997",
-        "- [ ] Take out the trash",
-        "09/08/1997",
         "- [ ] Take out the trash 2",
+        "08/10/1997",
+        "- [ ] Take out the trash",
+        "09/10/1997",
+        "- [ ] Take out the trash 3",
       ].join("\n");
 
       assertResult(input, [
         {
-          severity: DiagnosticSeverity.Error,
+          severity: DiagnosticSeverity.Information,
           range: new Range(0, 0, 0, "<!-- moved 09/06/1997 -->".length),
         },
         {
-          severity: DiagnosticSeverity.Error,
+          severity: DiagnosticSeverity.Information,
           range: new Range(2, 0, 2, 24),
         },
         {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(3, 0, 3, 10),
-        },
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(4, 0, 4, 24),
-        },
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(5, 0, 5, 10),
-        },
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(6, 0, 6, 24),
+          severity: DiagnosticSeverity.Information,
+          range: new Range(3, 0, 3, 26),
         },
       ]);
     });
@@ -548,7 +536,7 @@ describe("Skipping diagnostics", () => {
     test("Moved with date - invalid syntax", () => {
       const input = [
         "<!-- moved01/06/1997 -->",
-        "01/06/1997",
+        "01/09/1997",
         "- [ ] Take out the trash",
       ].join("\n");
 
