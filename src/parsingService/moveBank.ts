@@ -50,9 +50,11 @@ export interface MoveBank {
    */
   registerAccount(a: MoveAccountRegistration): void;
   /**
-   * Apply all transfers.
+   * Validate all transfers.
+   *
+   * A valid transfer means all items in the registered transfer exist in the registered account.
    */
-  applyTransfers(): void;
+  validateTransfers(): void;
 }
 /**
  * A bank of moves that can be used by the parser to shuffle todo list
@@ -74,7 +76,7 @@ export default class MoveBankImpl implements MoveBank {
     this.accounts[a.key] = a.value;
   }
 
-  applyTransfers(): void {
+  validateTransfers(): void {
     for (const t of this.transferRequests) {
       const account = this.accounts[t.key];
       if (!account) continue;

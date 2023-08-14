@@ -45,7 +45,7 @@ export class DeadlineSection {
     date,
     line,
     sectionDiagnostics,
-    meta,
+    skipConditions,
   }: {
     sectionDiagnostics: ReportedDiagnostic | null;
     line: number;
@@ -53,7 +53,7 @@ export class DeadlineSection {
       instance: Date;
       originalString: string;
     };
-    meta: SkipSwitch;
+    skipConditions: SkipSwitch;
   }) {
     this._items = [];
     this._contentSet = new Set();
@@ -62,7 +62,7 @@ export class DeadlineSection {
     this._date = date;
     this._containsUnfinishedItems = undefined;
     this._potentialDiagnosticsRange = undefined;
-    this._skipConditions = meta;
+    this._skipConditions = skipConditions;
   }
 
   /**
@@ -71,9 +71,7 @@ export class DeadlineSection {
   public addDateDiagnostics(diagnostics: Diagnostic[]) {
     if (this._skipConditions.skip) return;
 
-    const registeredForExtraction: boolean =
-      this._skipConditions.move && !!this._skipConditions.move.dateString;
-    if (registeredForExtraction) {
+    if (this.isRegisteredForExtraction()) {
       if (this._items.length === 0) return;
 
       const { commentLength, commentLine, dateString } = this._skipConditions
@@ -110,9 +108,7 @@ export class DeadlineSection {
   public addTodoItemsDiagnostics(diagnostics: Diagnostic[]): void {
     if (this._skipConditions.skip) return;
 
-    const registeredForExtraction =
-      this._skipConditions.move && this._skipConditions.move.dateString;
-    if (registeredForExtraction) {
+    if (this.isRegisteredForExtraction()) {
       if (this._items.length === 0) return;
       for (const item of this._items) {
         if (item.isChecked) continue;
@@ -197,5 +193,9 @@ export class DeadlineSection {
     return this._containsUnfinishedItems !== undefined
       ? this._containsUnfinishedItems && this.hasItems
       : false;
+  }
+
+  public isRegisteredForExtraction(): boolean {
+    return this._skipConditions.move && !!this._skipConditions.move.dateString;
   }
 }

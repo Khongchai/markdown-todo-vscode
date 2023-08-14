@@ -250,7 +250,7 @@ export class DiagnosticsParser {
               instance: date,
               originalString: this._tokenizer.getText(),
             },
-            meta: {
+            skipConditions: {
               skip,
               move: moved && moveDetail ? { ...moveDetail } : false,
             },
@@ -353,7 +353,7 @@ export class DiagnosticsParser {
       }
     }
 
-    this._moveBank.applyTransfers();
+    this._moveBank.validateTransfers();
 
     for (const section of this._parsingState.todoSections) {
       /**

@@ -27,7 +27,12 @@ function addDecoration(...args: Parameters<DateParsedEvent>) {
           fontStyle: "italic",
           margin: "0 0 0 3em",
           contentText: (() => {
-            if (!section.hasItems) return "No items";
+            if (!section.hasItems) {
+              if (section.isRegisteredForExtraction()) {
+                return "All items moved";
+              }
+              return "No items";
+            }
             if (!section.containsUnfinishedItems) return "Done";
             if (diffDays < 0)
               return `Days past dateline: ${Math.abs(diffDays)}`;
