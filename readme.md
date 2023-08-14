@@ -97,3 +97,13 @@ This is a bit different from skipping. This is a bit better. Instead of not doin
 Add  `<!-- moved 20/03/2023 -->` before the section you want to move. The parser will take not of that section and will complain if the date you moved to does not exist.
 
 This works across all markdown files.
+
+**Moving must be done with the exact syntax. The two examples below show the top section moving its items to the bottom, while the bottom move its items with an incorrect syntax (nothing happens).**
+
+## All Items Moved
+
+![All items moved](assets/all-items-moved.png)
+
+## Some Items Moved
+
+![Some items moved](assets/some-items-moved.png)
