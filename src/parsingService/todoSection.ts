@@ -166,6 +166,8 @@ export class DeadlineSection {
     for (const item of this._items) {
       const foundItem = section._contentSet.has(item.content);
       if (foundItem) continue;
+      // checked items are basically ignored from this validation
+      if (item.isChecked) continue;
       // if the item is not found to be in the next section, then it has not been moved successfully.
       itemsNotDeposited.push(item);
     }

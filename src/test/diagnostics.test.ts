@@ -533,6 +533,21 @@ describe("Skipping diagnostics", () => {
       ]);
     });
 
+    test("Moved with date - correct syntax - the date to moved to exists, is not overdue, but only moved unfinished items", () => {
+      const input = [
+        "<!-- moved 09/10/1997 -->",
+        "07/10/1997",
+        "- [x] Take out the trash",
+        "- [ ] Take out the trash 2",
+        "08/10/1997",
+        "- [ ] Take out the trash",
+        "09/10/1997",
+        "- [ ] Take out the trash 2",
+      ].join("\n");
+
+      assertResult(input, []);
+    });
+
     test("Moved with date - invalid syntax", () => {
       const input = [
         "<!-- moved01/06/1997 -->",
