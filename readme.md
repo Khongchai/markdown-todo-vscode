@@ -107,3 +107,8 @@ This works across all markdown files.
 ## Some Items Moved
 
 ![Some items moved](assets/some-items-moved.png)
+
+
+# Full Example (2 files)
+
+![Full example with all functionalities](assets/full-example.png)
