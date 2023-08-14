@@ -1,6 +1,6 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
 import { ParsedItem, ReportedDiagnostic, SectionMoveDetail } from "./types";
-import { datePattern, messages } from "./constants";
+import { messages } from "./constants";
 
 interface SkipSwitch {
   /**

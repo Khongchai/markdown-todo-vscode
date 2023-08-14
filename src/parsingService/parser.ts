@@ -10,7 +10,6 @@ import {
 import { DeadlineSection as DeadlineSection } from "./todoSection";
 import "../protoExtensions/protoExtensions";
 import MoveBankImpl, { MoveBank } from "./moveBank";
-import { messages } from "./constants";
 
 export type DateParsedEvent = (
   section: DeadlineSection,
