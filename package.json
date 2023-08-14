@@ -2,7 +2,7 @@
   "name": "markdown-todo-vscode",
   "private": true,
   "displayName": "Markdown Dated Todo List",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "Khongchai",
   "repository": {
     "type": "git",
