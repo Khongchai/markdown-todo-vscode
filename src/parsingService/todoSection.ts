@@ -1,5 +1,5 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
-import { ParsedDateline, ReportedDiagnostic, SectionMoveDetail } from "./types";
+import { ParsedItem, ReportedDiagnostic, SectionMoveDetail } from "./types";
 import { datePattern, messages } from "./constants";
 
 interface SkipSwitch {
@@ -28,7 +28,10 @@ export class DeadlineSection {
    * The diagnostic associated with this date.
    */
   private _sectionDiagnostics: ReportedDiagnostic | null;
-  private _items: ParsedDateline[];
+  // An object with key of string and value of deadlines
+  private _items: ParsedItem[];
+  // a O(1) table at hand to check if it contains a piece of content
+  private _contentSet: Set<string>;
   private _location: number;
   private _date: {
     instance: Date;
@@ -53,6 +56,7 @@ export class DeadlineSection {
     meta: SkipSwitch;
   }) {
     this._items = [];
+    this._contentSet = new Set();
     this._sectionDiagnostics = sectionDiagnostics;
     this._location = line;
     this._date = date;
@@ -87,7 +91,7 @@ export class DeadlineSection {
         diagnostics.push({
           message: messages.notAllItemsMoved,
           range: new Range(commentLine, 0, commentLine, commentLength),
-          severity: DiagnosticSeverity.Error,
+          severity: DiagnosticSeverity.Information,
         });
       }
 
@@ -115,7 +119,7 @@ export class DeadlineSection {
         diagnostics.push({
           message: messages.itemNotMoved,
           range: new Range(item.line, 0, item.line, item.content.length),
-          severity: DiagnosticSeverity.Error,
+          severity: DiagnosticSeverity.Information,
         });
       }
       return;
@@ -153,18 +157,25 @@ export class DeadlineSection {
       this._containsUnfinishedItems = true;
     }
     this._items.push({ content: item, line, isChecked });
+    this._contentSet.add(item);
   }
 
   /**
-   * Extract the parsed items from this section.
+   * Validate that there is an item in the next section that shares the exact same message as the item in this section.
    */
-  public extractItemsTo(section: DeadlineSection) {
+  public validateItemsMove(section: DeadlineSection) {
+    if (section._date.originalString === this._date.originalString) return;
     if (this._items.length === 0) return;
-    const items = this._items;
-    this._items = [];
-    for (const item of items) {
-      section.addTodoItem(item.content, item.line, item.isChecked);
+    const itemsNotDeposited: ParsedItem[] = [];
+    for (const item of this._items) {
+      const foundItem = section._contentSet.has(item.content);
+      if (foundItem) continue;
+      // if the item is not found to be in the next section, then it has not been moved successfully.
+      itemsNotDeposited.push(item);
     }
+
+    // In the happy path, the length of the itemsNotDeposited array should be 0.
+    this._items = itemsNotDeposited;
   }
 
   public addPotentialDiagnostics(diagnostics: Diagnostic) {

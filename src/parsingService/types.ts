@@ -6,7 +6,7 @@ export interface SectionMoveDetail {
   commentLength: number;
 }
 
-export interface ParsedDateline {
+export interface ParsedItem {
   content: string;
   line: number;
   // - [ ] or - [x] || - [X]

@@ -78,7 +78,7 @@ export default class MoveBankImpl implements MoveBank {
     for (const t of this.transferRequests) {
       const account = this.accounts[t.key];
       if (!account) continue;
-      t.value.extractItemsTo(account);
+      t.value.validateItemsMove(account);
     }
   }
 }
