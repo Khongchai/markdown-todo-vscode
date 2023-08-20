@@ -1,6 +1,7 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
-import { ParsedItem, ReportedDiagnostic, SectionMoveDetail } from "./types";
+import { ReportedDiagnostic, SectionMoveDetail } from "./types";
 import { messages } from "./constants";
+import { ParsedItem } from "./parsedItem";
 
 interface SkipSwitch {
   /**
@@ -30,7 +31,11 @@ export class DeadlineSection {
   private _sectionDiagnostics: ReportedDiagnostic | null;
   // An object with key of string and value of deadlines
   private _items: ParsedItem[];
-  // a O(1) table at hand to check if it contains a piece of content
+  /**
+   * A fast lookup table of a content of the items in this section
+   *
+   * This collection does not include the `- [ ]` part
+   */
   private _contentSet: Set<string>;
   private _location: number;
   private _date: {
@@ -152,23 +157,27 @@ export class DeadlineSection {
     if (this._containsUnfinishedItems === undefined && !isChecked) {
       this._containsUnfinishedItems = true;
     }
-    this._items.push({ content: item, line, isChecked });
-    this._contentSet.add(item);
+    const newItem = new ParsedItem(item, line, isChecked);
+    this._items.push(newItem);
+    this._contentSet.add(newItem.getListContent());
   }
 
   /**
    * Validate that there is an item in the next section that shares the exact same message as the item in this section.
+   *
+   * @param requestee the section to validate if it contains the items of this section.
    */
-  public validateItemsMove(section: DeadlineSection) {
-    if (section._date.originalString === this._date.originalString) return;
+  public validateItemsMove(requestee: DeadlineSection) {
+    if (requestee._date.originalString === this._date.originalString) return;
     if (this._items.length === 0) return;
     const itemsNotDeposited: ParsedItem[] = [];
     for (const item of this._items) {
-      const foundItem = section._contentSet.has(item.content);
-      if (foundItem) continue;
       // checked items are basically ignored from this validation
       if (item.isChecked) continue;
-      // if the item is not found to be in the next section, then it has not been moved successfully.
+
+      const foundItem = requestee._contentSet.has(item.getListContent());
+      if (foundItem) continue;
+      // if the item is not found to be in the requestee, then it has not been moved successfully.
       itemsNotDeposited.push(item);
     }
 

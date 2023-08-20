@@ -548,6 +548,28 @@ describe("Skipping diagnostics", () => {
       assertResult(input, []);
     });
 
+    test("Moved item is marked as finished later", () => {
+      const input = [
+        "<!-- moved 09/10/1997 -->",
+        "07/10/1997",
+        "- [ ] Take out the trash",
+        "- [ ] Take out the trash 2",
+        "09/10/1997",
+        "- [x] Take out the trash 2",
+      ].join("\n");
+
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Information,
+          range: new Range(0, 0, 0, "<!-- moved 09/10/1997 -->".length),
+        },
+        {
+          severity: DiagnosticSeverity.Information,
+          range: new Range(2, 0, 2, 24),
+        },
+      ]);
+    });
+
     test("Moved with date - invalid syntax", () => {
       const input = [
         "<!-- moved01/06/1997 -->",

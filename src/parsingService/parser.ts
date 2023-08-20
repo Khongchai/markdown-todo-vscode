@@ -187,6 +187,7 @@ export class DiagnosticsParser {
     this._visitors.forEach((v) => v.onParseBegin?.());
 
     this._tokenizer.reset();
+    this._moveBank.reset();
 
     const diagnostics: Diagnostic[] = [];
     if (!this._isUsingControllledDate) {

@@ -6,13 +6,6 @@ export interface SectionMoveDetail {
   commentLength: number;
 }
 
-export interface ParsedItem {
-  content: string;
-  line: number;
-  // - [ ] or - [x] || - [X]
-  isChecked: boolean;
-}
-
 export interface ReportedDiagnostic {
   sev: DiagnosticSeverity;
   message: string;

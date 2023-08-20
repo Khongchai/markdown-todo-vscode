@@ -41,6 +41,7 @@ export interface MoveAccountRegistration {
  * Once the section to be deposited to is found, extract all items of the registered section to the depositee.
  */
 export interface MoveBank {
+  reset(): void;
   /**
    * Register a transfer request.
    */
@@ -60,27 +61,32 @@ export interface MoveBank {
  * A bank of moves that can be used by the parser to shuffle todo list
  */
 export default class MoveBankImpl implements MoveBank {
-  accounts: Record<AccountNumber, DeadlineSection>;
-  transferRequests: MoveTransfer[];
+  accounts!: Record<AccountNumber, DeadlineSection>;
+  transferRequests!: MoveTransfer[];
 
-  constructor() {
-    this.transferRequests = [];
-    this.accounts = {};
+  public constructor() {
+    this.reset();
   }
 
-  registerTransfer(t: MoveTransfer): void {
+  public registerTransfer(t: MoveTransfer): void {
     this.transferRequests.push(t);
   }
 
-  registerAccount(a: MoveAccountRegistration): void {
+  public registerAccount(a: MoveAccountRegistration): void {
     this.accounts[a.key] = a.value;
   }
 
-  validateTransfers(): void {
+  public validateTransfers(): void {
+    if (!this.transferRequests) return;
     for (const t of this.transferRequests) {
       const account = this.accounts[t.key];
       if (!account) continue;
       t.value.validateItemsMove(account);
     }
+  }
+
+  public reset() {
+    this.transferRequests = [];
+    this.accounts = {};
   }
 }
