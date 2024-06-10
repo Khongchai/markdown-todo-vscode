@@ -31,7 +31,7 @@ function addDecoration(...args: Parameters<DateParsedEvent>) {
               if (section.isRegisteredForExtraction()) {
                 return "All items moved";
               }
-              return "No items";
+              return;
             }
             if (!section.containsUnfinishedItems) return "Done";
             if (diffDays < 0)
