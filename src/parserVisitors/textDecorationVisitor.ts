@@ -27,16 +27,20 @@ function addDecoration(...args: Parameters<DateParsedEvent>) {
           fontStyle: "italic",
           margin: "0 0 0 3em",
           contentText: (() => {
+            const dayName = `(${section
+              .getDate()
+              .toLocaleDateString("en-US", { weekday: "long" })}) `;
+
             if (!section.hasItems) {
               if (section.isRegisteredForExtraction()) {
-                return "All items moved";
+                return dayName + "All items moved";
               }
-              return;
+              return dayName;
             }
-            if (!section.containsUnfinishedItems) return "Done";
+            if (!section.containsUnfinishedItems) return dayName + "Done";
             if (diffDays < 0)
-              return `Days past dateline: ${Math.abs(diffDays)}`;
-            return `Remaining days: ${diffDays}`;
+              return dayName + `Days past dateline: ${Math.abs(diffDays)}`;
+            return dayName + `Remaining days: ${diffDays}`;
           })(),
         },
       });
