@@ -43,6 +43,11 @@ describe("Parser returns the expected diagnostics", () => {
     assertResult(input, []);
   });
 
+  test("Single date with time", () => {
+    const input = ["01/06/1997 15:00"].join("\n");
+    assertResult(input, []);
+  });
+
   test("Single date with some texts", () => {
     const input = ["some random text 01/06/1997", "- [ ] a task"].join("\n");
     assertResult(input, [
