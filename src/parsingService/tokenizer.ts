@@ -39,9 +39,9 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
         continue;
       }
 
-      // Might be a date
+      // Is it a date or time? Date is xx/xx/xx, time is xx:xx
       if (this._dateValidator[0](s.charCodeAt(this._cursor.pos))) {
-        const result = this._handleDate(s);
+        const result = this._handleDateOrTime(s);
         if (result) {
           yield result;
         }
@@ -118,16 +118,29 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
     return Token.newLine;
   }
 
-  /**
-   *
-   * @param s the string to be parsed
-   * @returns Token.date if the string is a date, null otherwise
-   */
-  private _handleDate(s: string): Token.date | null {
-    const text = this._useValidator(s, this._dateValidator);
-    if (!text) return null;
-    this._text = text;
-    return Token.date;
+  private _handleDateOrTime(s: string): Token.time | Token.date | null {
+    const charCode = s.charCodeAt(this._cursor.pos + 2);
+    if (charCode === CharacterCodes.colon) {
+      const text = this._useValidator(s, this._timeValidator);
+      if (text) {
+        this._text = text;
+        return Token.time;
+      } else {
+        return null;
+      }
+    } else if (charCode === CharacterCodes.slash) {
+      const text = this._useValidator(s, this._dateValidator);
+      if (text) {
+        this._text = text;
+        return Token.date;
+      } else {
+        return null;
+      }
+    }
+
+    this._cursor.pos += 2;
+    this._cursor.lineOffset += 2;
+    return null;
   }
 
   /**
@@ -157,7 +170,7 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
       return null;
     }
 
-    const endResult = this._useValidator(s, end, false);
+    const endResult = this._useValidator(s, end, 0, 0);
     if (!endResult) return null;
     text += endResult;
 
@@ -271,22 +284,28 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
    *
    * If all validators are used up, the current cursor position will be the next character after the validated pattern.
    *
+   * @param s the string to parse
+   * @param validator the validator functions to call
+   * @param cursorStartsAt the position the cursor should start at. 0 means where the cursor currently is.
+   * @param validatorStartsAt  the position in the array the validator should start at. 0 means the beginning of the validator array is used and the subsequent ones are used in the next iterations.
+   *
    * @returns validated string or null if the validation fails
    */
   private _useValidator(
     s: string,
     validator: ((c: number) => boolean)[],
-    skipFirst = true
+    cursorStartsAt = 1,
+    validatorStartsAt = 1
   ): string | null {
     let text = "";
-    if (skipFirst) {
+    if (cursorStartsAt > 0) {
       text = s[this._cursor.pos];
-      this._cursor.pos++;
-      this._cursor.lineOffset++;
+      this._cursor.pos += cursorStartsAt;
+      this._cursor.lineOffset += cursorStartsAt;
     }
 
     for (
-      let i = skipFirst ? 1 : 0;
+      let i = validatorStartsAt;
       i < validator.length;
       i++, this._cursor.pos++, this._cursor.lineOffset++
     ) {

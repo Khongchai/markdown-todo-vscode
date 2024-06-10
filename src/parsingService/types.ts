@@ -16,7 +16,8 @@ export interface ReportedDiagnostic {
  */
 export const enum Token {
   newLine,
-  date,
+  date, // 01/08/1997
+  time, // 15:00
   // - [ ]
   todoItem,
   // - [x]

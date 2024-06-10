@@ -64,6 +64,14 @@ export abstract class DeclarativeValidator {
     moved: DeclarativeValidator._validatorFromText(" moved "),
   };
 
+  protected readonly _timeValidator: CharValidator[] = [
+    this._isDigit,
+    this._isDigit,
+    (ch) => ch === CharacterCodes.colon,
+    this._isDigit,
+    this._isDigit,
+  ];
+
   protected _isDigit(ch: number): boolean {
     return ch >= CharacterCodes._0 && ch <= CharacterCodes._9;
   }

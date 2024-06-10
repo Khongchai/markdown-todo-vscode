@@ -22,15 +22,56 @@ describe("Match list tokens", () => {
   test(case3, () => runTest(case3, [Token.todoItem, Token.lineEnd]));
 });
 
-describe("Match date tokens", () => {
-  const case1 = "01/06/1997";
-  test(case1, () => runTest(case1, [Token.date, Token.lineEnd]));
+test.each([
+  { raw: "01/06/1997", expected: [Token.date, Token.lineEnd] },
+  { raw: "01/06/1997", expected: [Token.date, Token.lineEnd] },
+  {
+    raw: "01/06/1997    01/06/1997",
+    expected: [Token.date, Token.date, Token.lineEnd],
+  },
+])(`Match date token: %j case`, ({ raw, expected }) => {
+  runTest(raw, expected);
+});
 
-  const case2 = "01/06/1997    ";
-  test(case2, () => runTest(case2, [Token.date, Token.lineEnd]));
+test.each([
+  { raw: "15:20", expected: [Token.time, Token.lineEnd] },
+  { raw: "00:00", expected: [Token.time, Token.lineEnd] },
+  {
+    raw: "23:59  01:00",
+    expected: [Token.time, Token.time, Token.lineEnd],
+  },
+])(`Match time token: %j case`, ({ raw, expected }) => {
+  runTest(raw, expected);
+});
 
-  const case3 = "01/06/1997    01/06/1997";
-  test(case3, () => runTest(case3, [Token.date, Token.date, Token.lineEnd]));
+test.each([
+  {
+    raw: "01/08/1997 15:20",
+    expected: [Token.date, Token.time, Token.lineEnd],
+  },
+  {
+    raw: "01/06/1997 23:59  01:00",
+    expected: [Token.date, Token.time, Token.time, Token.lineEnd],
+  },
+])(`Match date and time token: %j case`, ({ raw, expected }) => {
+  runTest(raw, expected);
+});
+
+test.each([
+  { raw: "01/088/1997", expected: [Token.lineEnd] },
+  { raw: "018/08/1997", expected: [Token.lineEnd] },
+  { raw: "01/08/19979", expected: [Token.date, Token.lineEnd] },
+  { raw: "10:500", expected: [Token.time, Token.lineEnd] },
+  {
+    raw: "1:50",
+    expected: [Token.lineEnd],
+  },
+  {
+    raw: "10:5",
+    expected: [Token.lineEnd],
+  },
+])(`Invalid date or time: %j case`, ({ raw, expected }) => {
+  runTest(raw, expected);
 });
 
 describe("Invalid list tokens", () => {
