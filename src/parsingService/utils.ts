@@ -6,9 +6,10 @@ export default class DateUtil {
   static getDateLikeNormalPeople(
     year: number,
     month: number,
-    day: number
+    day: number,
+    hour = 0
   ): Date {
-    return new Date(year, month - 1, day);
+    return new Date(year, month - 1, day, hour);
   }
 
   static getDate(): Date {

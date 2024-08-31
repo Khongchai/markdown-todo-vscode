@@ -13,9 +13,10 @@ const parser = new DiagnosticsParser({
 
 function assertResult(
   input: string,
-  expected: { severity: DiagnosticSeverity; range: Range }[]
+  expected: { severity: DiagnosticSeverity; range: Range }[],
+  theParser = parser
 ) {
-  const actual = parser.parse(input);
+  const actual = theParser.parse(input);
 
   expect(actual.length).toBe(expected.length);
 
@@ -62,7 +63,7 @@ describe("Parser returns the expected diagnostics", () => {
     ]);
   });
 
-  test("Multiple dates", () => {
+  test("Multiple dates with no time", () => {
     const input = [
       "30/07/1997",
       "- [ ] Take out the trash",
@@ -115,83 +116,174 @@ describe("Parser returns the expected diagnostics", () => {
     ]);
   });
 
-  describe("(Integration tests) Dates with todos", () => {
-    const todoLine1 = "- [ ] Take out the trash";
-    const todoLine2 = "- [ ] Do the dishes";
-    const nonTodoLine = "This is not a todo";
-    test("Case 1", () => {
-      const input = ["30/07/1997", todoLine1, todoLine2, nonTodoLine].join(
-        "\r\n"
-      );
-
-      assertResult(input, [
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(0, 0, 0, 10),
-        },
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(1, 0, 1, todoLine1.length),
-        },
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(2, 0, 2, todoLine2.length),
-        },
-      ]);
+  test.each([
+    ["01/08/1997", DiagnosticSeverity.Error],
+    [["01/08/1997", "09:00"].join("\n"), DiagnosticSeverity.Error],
+    [`01/08/1997 12:00`, DiagnosticSeverity.Error],
+    [["01/08/1997", "13:00"].join("\n"), DiagnosticSeverity.Warning],
+    [["01/08/1997", "14:00"].join("\n"), DiagnosticSeverity.Warning],
+    [["02/08/1997", "14:00"].join("\n"), DiagnosticSeverity.Warning],
+    [["03/08/1997", "14:00"].join("\n"), DiagnosticSeverity.Information],
+  ])("Multiple dates with time -- one line", (dateIdentifier, sev) => {
+    const todayAtNoon = DateUtil.getDateLikeNormalPeople(1997, 8, 1, 12);
+    const _parser = new DiagnosticsParser({
+      today: todayAtNoon,
+      daySettings: {
+        critical: 2,
+        deadlineApproaching: 4,
+      },
     });
 
-    test("Case 2: TODO Delimits by text: closing off a todo section", () => {
-      const input = [
-        "30/07/1997",
-        "random stuff",
-        todoLine1,
-        "<!-- end section -->",
-        "random stuff",
-        todoLine2, // this should not be recognized
-        todoLine2, // neither should this
-      ].join("\r\n");
+    const input = [dateIdentifier, "- [ ] something"].join("\n");
 
-      assertResult(input, [
+    assertResult(
+      input,
+      [
         {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(0, 0, 0, 10),
+          severity: sev,
+          range: new Range(1, 0, 1, 24),
         },
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(2, 0, 2, todoLine1.length),
-        },
-      ]);
+      ],
+      _parser
+    );
+  });
+
+  test("Multiple dates with time, multiple todos", () => {
+    const todayAtNoon = DateUtil.getDateLikeNormalPeople(1997, 8, 1, 12);
+    const _parser = new DiagnosticsParser({
+      today: todayAtNoon,
+      daySettings: {
+        critical: 2,
+        deadlineApproaching: 4,
+      },
     });
 
-    test("Case 3: Recognize only one date within the same line", () => {
-      const input = ["30/07/1997 01/08/1997"].join("\n");
+    const todoItem = "- [ ] something";
 
-      assertResult(input, [
-        {
-          severity: DiagnosticSeverity.Hint,
-          range: new Range(0, 11, 0, 21),
-        },
-      ]);
-    });
+    const input = [
+      "31/07/1997",
+      todoItem,
+      "01/08/1997",
+      todoItem,
+      "01/08/1997 11:00",
+      todoItem,
+      "13:00",
+      todoItem,
+      "18:00",
+      todoItem,
+      "02/08/1997 13:00",
+      todoItem,
+    ].join("\n");
 
-    test("Case 4: If a list is checked, skip it", () => {
-      const input = [
-        "30/07/1997",
-        "- [x] Take out the trash",
-        "- [ ] Walk the cat",
-      ].join("\n");
-
-      assertResult(input, [
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(0, 0, 0, 10),
-        },
+    assertResult(
+      input,
+      [
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(2, 0, 2, 18),
+          range: new Range(1, 0, 1, 15),
         },
-      ]);
-    });
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(3, 0, 1, 15),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(5, 0, 1, 15),
+        },
+        {
+          severity: DiagnosticSeverity.Warning,
+          range: new Range(7, 0, 1, 15),
+        },
+        {
+          severity: DiagnosticSeverity.Warning,
+          range: new Range(9, 0, 1, 15),
+        },
+        {
+          severity: DiagnosticSeverity.Information,
+          range: new Range(11, 0, 1, 15),
+        },
+      ],
+      _parser
+    );
+  });
+});
+
+describe("(Integration tests) Dates with todos", () => {
+  const todoLine1 = "- [ ] Take out the trash";
+  const todoLine2 = "- [ ] Do the dishes";
+  const nonTodoLine = "This is not a todo";
+  test("Case 1", () => {
+    const input = ["30/07/1997", todoLine1, todoLine2, nonTodoLine].join(
+      "\r\n"
+    );
+
+    assertResult(input, [
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(0, 0, 0, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(1, 0, 1, todoLine1.length),
+      },
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(2, 0, 2, todoLine2.length),
+      },
+    ]);
+  });
+
+  test("Case 2: TODO Delimits by text: closing off a todo section", () => {
+    const input = [
+      "30/07/1997",
+      "random stuff",
+      todoLine1,
+      "<!-- end section -->",
+      "random stuff",
+      todoLine2, // this should not be recognized
+      todoLine2, // neither should this
+    ].join("\r\n");
+
+    assertResult(input, [
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(0, 0, 0, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(2, 0, 2, todoLine1.length),
+      },
+    ]);
+  });
+
+  test("Case 3: Recognize only one date within the same line", () => {
+    const input = ["30/07/1997 01/08/1997"].join("\n");
+
+    assertResult(input, [
+      {
+        severity: DiagnosticSeverity.Hint,
+        range: new Range(0, 11, 0, 21),
+      },
+    ]);
+  });
+
+  test("Case 4: If a list is checked, skip it", () => {
+    const input = [
+      "30/07/1997",
+      "- [x] Take out the trash",
+      "- [ ] Walk the cat",
+    ].join("\n");
+
+    assertResult(input, [
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(0, 0, 0, 10),
+      },
+      {
+        severity: DiagnosticSeverity.Error,
+        range: new Range(2, 0, 2, 18),
+      },
+    ]);
   });
 });
 
