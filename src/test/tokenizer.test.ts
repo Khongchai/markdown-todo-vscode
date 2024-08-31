@@ -53,6 +53,31 @@ test.each([
     raw: "01/06/1997 23:59  01:00",
     expected: [Token.date, Token.time, Token.time, Token.lineEnd],
   },
+  {
+    raw: [
+      "01/06/1997",
+      "- [ ] Something",
+      "13:00",
+      "- [ ] Something else",
+      "02/06/1997 13:00",
+      "- [ ] Something",
+    ].join("\n"),
+    expected: [
+      Token.date,
+      Token.newLine,
+      Token.todoItem,
+      Token.newLine,
+      Token.time,
+      Token.newLine,
+      Token.todoItem,
+      Token.newLine,
+      Token.date,
+      Token.time,
+      Token.newLine,
+      Token.todoItem,
+      Token.lineEnd,
+    ],
+  },
 ])(`Match date and time token: %j case`, ({ raw, expected }) => {
   runTest(raw, expected);
 });
