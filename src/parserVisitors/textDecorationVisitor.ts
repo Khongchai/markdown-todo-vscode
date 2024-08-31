@@ -1,6 +1,6 @@
-import { DateParsedEvent, ParserVisitor } from "../parsingService/parser";
 import * as vscode from "vscode";
-import DateUtil from "../parsingService/utils";
+import DateUtil from "../parsingService/dateUtils";
+import { DateParsedEvent, ParserVisitor } from "../parsingService/parser";
 import { DeadlineSection } from "../parsingService/todoSection";
 
 const decorationMap: Record<string, vscode.TextEditorDecorationType> = {};

@@ -185,7 +185,10 @@ export class DeadlineSection {
     this._items = itemsNotDeposited;
   }
 
-  public addPotentialDiagnostics(diagnostics: Diagnostic) {
+  /**
+   * Possible diagnostics error. This section will apply this diagnostics only if it is not empty.
+   */
+  public setPotentialDiagnostics(diagnostics: Diagnostic) {
     this._potentialDiagnosticsRange = diagnostics;
   }
 

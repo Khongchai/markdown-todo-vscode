@@ -12,9 +12,19 @@ export default class DateUtil {
     return new Date(year, month - 1, day, hour);
   }
 
+  /**
+   * @returns today's date at midnight (00:00:00)
+   */
   static getDate(): Date {
     const today = new Date();
-    return new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      0,
+      0,
+      0
+    );
   }
 
   /**

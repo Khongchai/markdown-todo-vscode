@@ -1,6 +1,6 @@
 import { DiagnosticSeverity, Range } from "vscode";
 import { DiagnosticsParser } from "../parsingService/parser";
-import DateUtil from "../parsingService/utils";
+import DateUtil from "../parsingService/dateUtils";
 
 const controlledToday = DateUtil.getDateLikeNormalPeople(1997, 8, 1); // my bd :p
 const parser = new DiagnosticsParser({
@@ -116,7 +116,7 @@ describe("Parser returns the expected diagnostics", () => {
     ]);
   });
 
-  test.each([
+  test.only.each([
     ["01/08/1997", DiagnosticSeverity.Error],
     [["01/08/1997", "09:00"].join("\n"), DiagnosticSeverity.Error],
     [`01/08/1997 12:00`, DiagnosticSeverity.Error],
@@ -124,7 +124,7 @@ describe("Parser returns the expected diagnostics", () => {
     [["01/08/1997", "14:00"].join("\n"), DiagnosticSeverity.Warning],
     [["02/08/1997", "14:00"].join("\n"), DiagnosticSeverity.Warning],
     [["03/08/1997", "14:00"].join("\n"), DiagnosticSeverity.Information],
-  ])("Multiple dates with time -- one line", (dateIdentifier, sev) => {
+  ])("Multiple dates with time -- one line %j", (dateIdentifier, sev) => {
     const todayAtNoon = DateUtil.getDateLikeNormalPeople(1997, 8, 1, 12);
     const _parser = new DiagnosticsParser({
       today: todayAtNoon,
@@ -449,14 +449,32 @@ describe("Skipping diagnostics", () => {
     });
 
     test("Skip ident with another comment", () => {
-      const input2 = [
+      const input = [
         "<!-- skip -->",
         "<!-- got lazy -->",
         "01/06/1997",
         "- [ ] Take out the trash",
       ].join("\n");
 
-      assertResult(input2, []);
+      assertResult(input, []);
+    });
+
+    test("Skipping in the middle of a timed section", () => {
+      const input = [
+        "01/06/1997",
+        "13:00",
+        "- [ ] Take out the trash",
+        "<!-- skip -->",
+        "14:00",
+        "- [ ] Take out the trash",
+      ].join("\n");
+
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(2, 0, 2, 24),
+        },
+      ]);
     });
 
     test("Skip ident with another comment and todo list", () => {

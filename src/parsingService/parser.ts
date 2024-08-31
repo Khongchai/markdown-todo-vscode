@@ -1,5 +1,4 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
-import DateUtil from "./utils";
 import { DiagnosticsTokenizer } from "./tokenizer";
 import {
   DaySettings,
@@ -10,6 +9,7 @@ import {
 import { DeadlineSection as DeadlineSection } from "./todoSection";
 import "../protoExtensions/protoExtensions";
 import MoveBankImpl, { MoveBank } from "./moveBank";
+import DateUtil from "./dateUtils";
 
 export type DateParsedEvent = (
   section: DeadlineSection,
@@ -88,9 +88,9 @@ class _ParsingGuard {
   }
 
   /**
-   * check guard conditions.
+   * If any of the early return conditions are met, this date block should be skipped.
    */
-  public checkGuardAndUpdateState(
+  public checkEarlyReturnConditions(
     token: Token,
     tokenizer: DiagnosticsTokenizer
   ): "hit" | "miss" {
@@ -159,7 +159,7 @@ export class DiagnosticsParser {
   private _parsingState: _ParsingGuard;
   private _moveBank: MoveBank;
 
-  constructor({
+  public constructor({
     daySettings: settings,
     today,
     visitors,
@@ -183,7 +183,7 @@ export class DiagnosticsParser {
   /**
    * Parses for new diagnostics + update the date.
    */
-  parse(text: string): Diagnostic[] {
+  public parse(text: string): Diagnostic[] {
     this._visitors.forEach((v) => v.onParseBegin?.());
 
     this._tokenizer.reset();
@@ -195,7 +195,7 @@ export class DiagnosticsParser {
     }
 
     for (const token of this._tokenizer.tokenize(text)) {
-      const guardState = this._parsingState.checkGuardAndUpdateState(
+      const guardState = this._parsingState.checkEarlyReturnConditions(
         token,
         this._tokenizer
       );
@@ -204,88 +204,8 @@ export class DiagnosticsParser {
       }
 
       switch (token) {
-        case Token.date: {
-          // This means that we have found a requested date to deposit the next section to.
-          if (
-            // cannot use insideCommentCheck because the tokenization order
-            // is not guaranteed
-            // this._parsingState.isInsideComment &&
-            this._parsingState.moveNextSection &&
-            this._parsingState.moveCommentDetail.commentLine ===
-              this._tokenizer.getLine()
-          ) {
-            this._parsingState.moveCommentDetail.dateString =
-              this._tokenizer.getText();
-            continue;
-          }
-          // Check for duplicate dates on the same line.
-          if (this._parsingState.todoSections.isNotEmpty()) {
-            const prevSection = this._parsingState.todoSections.getLast();
-            // Allow just one date per line. Ignore the rest on the same line, if any.
-            if (
-              prevSection.getTheLineDateIsOn() === this._tokenizer.getLine()
-            ) {
-              const range = this._getRange();
-              diagnostics.push({
-                range,
-                message: "Only one date per line is allowed.",
-                severity: DiagnosticSeverity.Hint,
-              });
-              continue;
-            }
-          }
-
-          // All good, add the date.
-          const date = this._getDate(this._tokenizer.getText());
-          const diagnosticToReport = this._checkDiagnosticSeverity(date);
-
-          const skip = this._parsingState.skipNextSection;
-          const moved = this._parsingState.moveNextSection;
-          const moveDetail = this._parsingState.moveCommentDetail;
-
-          const currentSection = new DeadlineSection({
-            sectionDiagnostics: diagnosticToReport,
-            line: this._tokenizer.getLine(),
-            date: {
-              instance: date,
-              originalString: this._tokenizer.getText(),
-            },
-            skipConditions: {
-              skip,
-              move: moved && moveDetail ? { ...moveDetail } : false,
-            },
-          });
-
-          if (this._parsingState.moveNextSection) {
-            const commentDetail = this._parsingState.moveCommentDetail;
-            this._moveBank.registerTransfer({
-              key: commentDetail.dateString,
-              value: currentSection,
-            });
-            this._parsingState.moveNextSection = false;
-            commentDetail.reset();
-            this._parsingState.skipNextSection = false;
-          }
-
-          this._moveBank.registerAccount({
-            key: this._tokenizer.getText(),
-            value: currentSection,
-          });
-
-          this._parsingState.todoSections.push(currentSection);
-          this._parsingState.isParsingTodoSectionItem = true;
-
-          if (!diagnosticToReport) {
-            continue;
-          }
-
-          const range = this._getRange();
-          currentSection.addPotentialDiagnostics({
-            range,
-            message: diagnosticToReport.message,
-            severity: diagnosticToReport.sev,
-          });
-
+        case Token.date || Token.time: {
+          this._handleDateTimeTokens(diagnostics, token);
           continue;
         }
         case Token.finishedTodoItem:
@@ -371,6 +291,123 @@ export class DiagnosticsParser {
     this._visitors.forEach((v) => v.onParseEnd?.());
     this._parsingState.reset();
     return diagnostics;
+  }
+
+  /**
+   * Both date and time tokens are handled together.
+   *
+   * If date and time appear on the same line, a todo section will be created using the date at time,
+   *
+   * if the date and time appear on different lines, each time will be treated as a separate todo section of latest-seen with that time.
+   *
+   * If there are no previous dates before the first time, the date defaults to today.
+   */
+  private _handleDateTimeTokens(out: Diagnostic[], token: Token) {
+    // This means that we have found a requested date to deposit the next section to.
+    if (
+      // cannot use insideCommentCheck because the tokenization order
+      // is not guaranteed
+      // this._parsingState.isInsideComment &&
+      this._parsingState.moveNextSection &&
+      this._parsingState.moveCommentDetail.commentLine ===
+        this._tokenizer.getLine()
+    ) {
+      this._parsingState.moveCommentDetail.dateString =
+        this._tokenizer.getText();
+      return;
+    }
+    // Check for duplicate dates on the same line.
+    if (this._parsingState.todoSections.isNotEmpty()) {
+      const prevSection = this._parsingState.todoSections.getLast();
+      // Allow just one date per line. Ignore the rest on the same line, if any.
+      if (prevSection.getTheLineDateIsOn() === this._tokenizer.getLine()) {
+        const range = this._getRange();
+        out.push({
+          range,
+          message: "Only one date per line is allowed.",
+          severity: DiagnosticSeverity.Hint,
+        });
+        return;
+      }
+    }
+
+    // All good, add the date.
+    const text = this._tokenizer.getText();
+    const date =
+      token === Token.date ? this._getDate(text) : this._getDateFromTime(text);
+    const diagnosticToReport = this._checkDiagnosticSeverity(date);
+
+    const skip = this._parsingState.skipNextSection;
+    const moved = this._parsingState.moveNextSection;
+    const moveDetail = this._parsingState.moveCommentDetail;
+
+    const currentSection = new DeadlineSection({
+      sectionDiagnostics: diagnosticToReport,
+      line: this._tokenizer.getLine(),
+      date: {
+        instance: date,
+        originalString: this._tokenizer.getText(),
+      },
+      skipConditions: {
+        skip,
+        move: moved && moveDetail ? { ...moveDetail } : false,
+      },
+    });
+
+    if (this._parsingState.moveNextSection) {
+      const commentDetail = this._parsingState.moveCommentDetail;
+      this._moveBank.registerTransfer({
+        key: commentDetail.dateString,
+        value: currentSection,
+      });
+      this._parsingState.moveNextSection = false;
+      commentDetail.reset();
+      this._parsingState.skipNextSection = false;
+    }
+
+    this._moveBank.registerAccount({
+      key: this._tokenizer.getText(),
+      value: currentSection,
+    });
+
+    this._parsingState.todoSections.push(currentSection);
+    this._parsingState.isParsingTodoSectionItem = true;
+
+    if (!diagnosticToReport) {
+      return;
+    }
+
+    const range = this._getRange();
+    currentSection.setPotentialDiagnostics({
+      range,
+      message: diagnosticToReport.message,
+      severity: diagnosticToReport.sev,
+    });
+  }
+
+  private _getDateFromTime(timeString: string): Date {
+    const [hour, minute] = timeString.split(":");
+    let parsedHour = Number(hour);
+    let parsedMinute = Number(minute);
+    if (Number.isNaN(parsedHour) || Number.isNaN(parsedMinute)) {
+      parsedHour = 0;
+      parsedMinute = 0;
+    }
+
+    const baseDate = this._parsingState.todoSections.isNotEmpty()
+      ? this._parsingState.todoSections.at(-1)!.getDate()
+      : new Date();
+
+    const date = new Date(
+      baseDate.getFullYear(),
+      baseDate.getMonth(),
+      baseDate.getDate(),
+      parsedHour,
+      parsedMinute,
+      0
+    );
+
+    return date;
   }
 
   private _getDate(dateString: string): Date {
