@@ -121,49 +121,85 @@ describe("Parser returns the expected diagnostics", () => {
 
   describe("Multiple dates with time: oneline", () => {
     test("Date and time on different line, past deadline", () => {
+      const todayAtNoon = new Date(1997, 8 - 1, 1, 12);
+      const _parser = new DiagnosticsParser({
+        today: todayAtNoon,
+        daySettings: {
+          critical: 2,
+          deadlineApproaching: 4,
+        },
+      });
       const input = ["01/08/1997", "09:00", "- [ ] something"].join("\n");
 
-      assertResult(input, [
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(1, 0, 1, 5),
-        },
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(2, 0, 2, 15),
-        },
-      ]);
+      assertResult(
+        input,
+        [
+          {
+            severity: DiagnosticSeverity.Error,
+            range: new Range(1, 0, 1, 5),
+          },
+          {
+            severity: DiagnosticSeverity.Error,
+            range: new Range(2, 0, 2, 15),
+          },
+        ],
+        _parser
+      );
     });
 
     test("Date and time on same line, past deadline", () => {
+      const todayAtNoon = new Date(1997, 8 - 1, 1, 12);
+      const _parser = new DiagnosticsParser({
+        today: todayAtNoon,
+        daySettings: {
+          critical: 2,
+          deadlineApproaching: 4,
+        },
+      });
       const dateLength = "01/08/1997 09:00".length;
       const input = ["01/08/1997 09:00", "- [ ] something"].join("\n");
 
-      assertResult(input, [
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(0, 0, 0, dateLength),
-        },
-        {
-          severity: DiagnosticSeverity.Error,
-          range: new Range(1, 0, 1, 15),
-        },
-      ]);
+      assertResult(
+        input,
+        [
+          {
+            severity: DiagnosticSeverity.Error,
+            range: new Range(0, 0, 0, dateLength),
+          },
+          {
+            severity: DiagnosticSeverity.Error,
+            range: new Range(1, 0, 1, 15),
+          },
+        ],
+        _parser
+      );
     });
 
     test("Date and time on different line, deadline approaching", () => {
+      const todayAtNoon = new Date(1997, 8 - 1, 1, 12);
+      const _parser = new DiagnosticsParser({
+        today: todayAtNoon,
+        daySettings: {
+          critical: 2,
+          deadlineApproaching: 4,
+        },
+      });
       const input = ["01/08/1997", "13:00", "- [ ] something"].join("\n");
 
-      assertResult(input, [
-        {
-          severity: DiagnosticSeverity.Warning,
-          range: new Range(1, 0, 1, 5),
-        },
-        {
-          severity: DiagnosticSeverity.Warning,
-          range: new Range(2, 0, 2, 15),
-        },
-      ]);
+      assertResult(
+        input,
+        [
+          {
+            severity: DiagnosticSeverity.Warning,
+            range: new Range(1, 0, 1, 5),
+          },
+          {
+            severity: DiagnosticSeverity.Warning,
+            range: new Range(2, 0, 2, 15),
+          },
+        ],
+        _parser
+      );
     });
   });
 
