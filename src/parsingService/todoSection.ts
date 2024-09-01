@@ -50,7 +50,7 @@ export class DeadlineSection {
   private _potentialDiagnosticsRange?: Diagnostic;
   private _skipConditions: SkipSwitch;
   private _config: {
-    now: Date;
+    today?: Date;
     settings: DaySettings;
   };
 
@@ -67,7 +67,7 @@ export class DeadlineSection {
     };
     skipConditions: SkipSwitch;
     config: {
-      now: Date;
+      now?: Date;
       settings: DaySettings;
     };
   }) {
@@ -80,7 +80,8 @@ export class DeadlineSection {
     this._potentialDiagnosticsRange = undefined;
     this._skipConditions = skipConditions;
     this._config = {
-      ...config,
+      settings: config.settings,
+      today: config.now,
     };
   }
 
@@ -200,22 +201,23 @@ export class DeadlineSection {
   }
 
   public runDiagnosticCheck(): Readonly<ReportedDiagnostic> | null {
-    const diffDays = DateUtil.getDiffInDays(
-      this._date.instance,
-      this._config.now
-    );
+    const now = this._config?.today ?? new Date();
+    const diffTime = this._date.instance.getTime() - now.getTime();
     const { critical, deadlineApproaching } = this._config.settings;
-    if (diffDays < 0) {
+    const criticalMilli = DateUtil.dayToMilli(critical);
+    const deadlineApproachingMilli = DateUtil.dayToMilli(deadlineApproaching);
+
+    if (diffTime < 0) {
       this._sectionDiagnostics = {
         sev: DiagnosticSeverity.Error,
         message: "This is overdue!",
       };
-    } else if (diffDays < critical) {
+    } else if (diffTime < criticalMilli) {
       this._sectionDiagnostics = {
         sev: DiagnosticSeverity.Warning,
         message: `You should do this soon!`,
       };
-    } else if (diffDays < deadlineApproaching) {
+    } else if (diffTime < deadlineApproachingMilli) {
       this._sectionDiagnostics = {
         sev: DiagnosticSeverity.Information,
         message: "The deadline is approaching.",

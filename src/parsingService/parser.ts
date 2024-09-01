@@ -438,7 +438,7 @@ export class DiagnosticsParser {
     const _dd = parseInt(dd);
     const _mm = parseInt(mm);
     const _yyyy = parseInt(yyyy);
-    const date = DateUtil.getDateLikeNormalPeople(_yyyy, _mm, _dd);
+    const date = DateUtil.getDateLikeNormalPeople(_yyyy, _mm, _dd, 23);
     if (!date.valueOf()) {
       // TODO throw parsing error, invalid date.
     }

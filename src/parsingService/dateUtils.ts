@@ -2,14 +2,16 @@ export default class DateUtil {
   /**
    * A buffer so that I can pass the date paramter with month starting at
    * 1 like normal people.
+   *
+   * Also returns the date at the final minute of the hour
    */
   static getDateLikeNormalPeople(
     year: number,
     month: number,
     day: number,
-    hour = 0
+    hour: number
   ): Date {
-    return new Date(year, month - 1, day, hour);
+    return new Date(year, month - 1, day, hour, 59, 59, 999);
   }
 
   /**
@@ -27,12 +29,11 @@ export default class DateUtil {
     );
   }
 
-  /**
-   *  Returns d1 - d2
-   */
-  static getDiffInDays(d1: Date, d2: Date): number {
-    const diff = d1.getTime() - d2.getTime();
-    const diffDays = Math.floor(diff / 1000 / 60 / 60 / 24);
-    return diffDays;
+  public static dayToMilli(dayCount: number): number {
+    return 1000 * 60 * 60 * 24 * dayCount;
+  }
+
+  public static milliToDay(milli: number): number {
+    return Math.floor(milli / 1000 / 60 / 60 / 24);
   }
 }

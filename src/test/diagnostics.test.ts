@@ -2,7 +2,7 @@ import { DiagnosticSeverity, Range } from "vscode";
 import { DiagnosticsParser } from "../parsingService/parser";
 import DateUtil from "../parsingService/dateUtils";
 
-const controlledToday = DateUtil.getDateLikeNormalPeople(1997, 8, 1); // my bd :p
+const controlledToday = DateUtil.getDateLikeNormalPeople(1997, 8, 1, 23); // my bd :p
 const parser = new DiagnosticsParser({
   today: controlledToday,
   daySettings: {
@@ -116,8 +116,7 @@ describe("Parser returns the expected diagnostics", () => {
     ]);
   });
 
-  test.only.each([
-    ["01/08/1997", DiagnosticSeverity.Error],
+  test.each([
     [["01/08/1997", "09:00"].join("\n"), DiagnosticSeverity.Error],
     [`01/08/1997 12:00`, DiagnosticSeverity.Error],
     [["01/08/1997", "13:00"].join("\n"), DiagnosticSeverity.Warning],
@@ -140,8 +139,14 @@ describe("Parser returns the expected diagnostics", () => {
       input,
       [
         {
+          // the time
           severity: sev,
-          range: new Range(1, 0, 1, 24),
+          range: new Range(1, 0, 1, 5),
+        },
+        {
+          // the item
+          severity: sev,
+          range: new Range(2, 0, 2, 15),
         },
       ],
       _parser
@@ -470,6 +475,10 @@ describe("Skipping diagnostics", () => {
       ].join("\n");
 
       assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(1, 0, 1, 5),
+        },
         {
           severity: DiagnosticSeverity.Error,
           range: new Range(2, 0, 2, 24),

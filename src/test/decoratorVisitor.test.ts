@@ -48,7 +48,7 @@ describe("visitorsTest", () => {
 
     runTest(input, [
       [
-        mockDeadlineSection(DateUtil.getDateLikeNormalPeople(1997, 6, 1)),
+        mockDeadlineSection(DateUtil.getDateLikeNormalPeople(1997, 6, 1, 23)),
         0,
         13,
       ],
@@ -60,12 +60,12 @@ describe("visitorsTest", () => {
 
     runTest(input, [
       [
-        mockDeadlineSection(DateUtil.getDateLikeNormalPeople(1997, 6, 1)),
+        mockDeadlineSection(DateUtil.getDateLikeNormalPeople(1997, 6, 1, 23)),
         0,
         13,
       ],
       [
-        mockDeadlineSection(DateUtil.getDateLikeNormalPeople(1997, 12, 31)),
+        mockDeadlineSection(DateUtil.getDateLikeNormalPeople(1997, 12, 31, 23)),
         2,
         10,
       ],
