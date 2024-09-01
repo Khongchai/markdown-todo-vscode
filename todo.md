@@ -24,5 +24,5 @@ Valid syntax #3
 - [ ] ...
 
 TODO:
-- [ ] Write diagnostics tests
-- [ ] Make it pass.
+- [x] Write diagnostics tests
+- [ ] Make them pass.
