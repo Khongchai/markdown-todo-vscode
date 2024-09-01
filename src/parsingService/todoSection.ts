@@ -26,10 +26,6 @@ interface SkipSwitch {
 }
 
 export class DeadlineSection {
-  /**
-   * The diagnostic associated with this date.
-   */
-  private _sectionDiagnostics: ReportedDiagnostic | null;
   // An object with key of string and value of deadlines
   private _items: ParsedItem[];
   /**
@@ -47,7 +43,10 @@ export class DeadlineSection {
     originalString: string;
   };
   private _containsUnfinishedItems?: boolean;
-  private _potentialDiagnosticsRange?: Diagnostic;
+  /**
+   * The diagnostic range that contains diagnostic metadata for the line the date is on.
+   */
+  private _dateDiagnosticRange?: Diagnostic;
   private _skipConditions: SkipSwitch;
   private _config: {
     today?: Date;
@@ -73,11 +72,10 @@ export class DeadlineSection {
   }) {
     this._items = [];
     this._contentSet = new Set();
-    this._sectionDiagnostics = null;
     this._location = line;
     this._date = date;
     this._containsUnfinishedItems = undefined;
-    this._potentialDiagnosticsRange = undefined;
+    this._dateDiagnosticRange = undefined;
     this._skipConditions = skipConditions;
     this._config = {
       settings: config.settings,
@@ -117,9 +115,9 @@ export class DeadlineSection {
       return;
     }
 
-    if (!this._potentialDiagnosticsRange) return;
+    if (!this._dateDiagnosticRange) return;
 
-    diagnostics.push(this._potentialDiagnosticsRange);
+    diagnostics.push(this._dateDiagnosticRange);
   }
 
   /**
@@ -141,7 +139,7 @@ export class DeadlineSection {
       return;
     }
 
-    if (!this._sectionDiagnostics || !this._items.length) return;
+    if (!this._dateDiagnosticRange || !this._items.length) return;
 
     for (const item of this._items) {
       if (item.isChecked) continue;
@@ -149,8 +147,8 @@ export class DeadlineSection {
       const range = new Range(item.line, 0, item.line, item.content.length);
       diagnostics.push({
         range,
-        message: this._sectionDiagnostics.message,
-        severity: this._sectionDiagnostics.sev,
+        message: this._dateDiagnosticRange.message,
+        severity: this._dateDiagnosticRange.severity,
       });
     }
   }
@@ -161,10 +159,6 @@ export class DeadlineSection {
 
   public setDate(date: Date) {
     this._date.instance = date;
-  }
-
-  public setDiagnostic(diagnostic: ReportedDiagnostic | null) {
-    this._sectionDiagnostics = diagnostic;
   }
 
   public addTodoItem(item: string, line: number, isChecked: boolean) {
@@ -202,36 +196,37 @@ export class DeadlineSection {
 
   public runDiagnosticCheck(): Readonly<ReportedDiagnostic> | null {
     const now = this._config?.today ?? new Date();
-    const diffTime = this._date.instance.getTime() - now.getTime();
+    const itemDate = this._date.instance;
+    const diffTime = itemDate.getTime() - now.getTime();
     const { critical, deadlineApproaching } = this._config.settings;
     const criticalMilli = DateUtil.dayToMilli(critical);
     const deadlineApproachingMilli = DateUtil.dayToMilli(deadlineApproaching);
 
-    if (diffTime < 0) {
-      this._sectionDiagnostics = {
+    if (diffTime <= 0) {
+      return {
         sev: DiagnosticSeverity.Error,
         message: "This is overdue!",
       };
     } else if (diffTime < criticalMilli) {
-      this._sectionDiagnostics = {
+      return {
         sev: DiagnosticSeverity.Warning,
         message: `You should do this soon!`,
       };
     } else if (diffTime < deadlineApproachingMilli) {
-      this._sectionDiagnostics = {
+      return {
         sev: DiagnosticSeverity.Information,
         message: "The deadline is approaching.",
       };
     }
 
-    return this._sectionDiagnostics;
+    return null;
   }
 
   /**
    * Possible diagnostics error. This section will apply this diagnostics only if it is not empty.
    */
   public setPotentialDiagnostic(diagnostics: Diagnostic): void {
-    this._potentialDiagnosticsRange = diagnostics;
+    this._dateDiagnosticRange = diagnostics;
   }
 
   /**

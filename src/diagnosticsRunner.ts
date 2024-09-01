@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { DiagnosticsParser, ParserVisitor } from "./parsingService/parser";
 import textDecorationVisitor from "./parserVisitors/textDecorationVisitor";
+import { DiagnosticsParser } from "./parsingService/parserExecutor";
 
 interface DiagnosticsRunner {
   update(document: vscode.TextDocument): void;

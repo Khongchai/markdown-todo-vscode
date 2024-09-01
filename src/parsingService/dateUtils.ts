@@ -1,17 +1,14 @@
 export default class DateUtil {
   /**
-   * A buffer so that I can pass the date paramter with month starting at
-   * 1 like normal people.
-   *
-   * Also returns the date at the final minute of the hour
+   * Returns the date at the final minute of the hour
    */
-  static getDateLikeNormalPeople(
-    year: number,
-    month: number,
-    day: number,
-    hour: number
+  static getDateLastMoment(
+    years: number,
+    months: number,
+    days: number,
+    hours: number
   ): Date {
-    return new Date(year, month - 1, day, hour, 59, 59, 999);
+    return new Date(years, months, days, hours, 59, 59, 999);
   }
 
   /**

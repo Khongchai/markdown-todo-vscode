@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { DiagnosticsParser } from "../../parsingService/parser";
+import { DiagnosticsParser } from "../../parsingService/parserExecutor";
 
 // todo...maybe
 test("Profiling", () => {

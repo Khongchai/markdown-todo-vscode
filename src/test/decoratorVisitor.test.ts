@@ -1,5 +1,8 @@
 import DateUtil from "../parsingService/dateUtils";
-import { DateParsedEvent, DiagnosticsParser } from "../parsingService/parser";
+import {
+  DateParsedEvent,
+  DiagnosticsParser,
+} from "../parsingService/parserExecutor";
 import { DeadlineSection } from "../parsingService/todoSection";
 
 // Modify this later when we have more visitors.
@@ -48,7 +51,7 @@ describe("visitorsTest", () => {
 
     runTest(input, [
       [
-        mockDeadlineSection(DateUtil.getDateLikeNormalPeople(1997, 6, 1, 23)),
+        mockDeadlineSection(DateUtil.getDateLastMoment(1997, 6 - 1, 1, 23)),
         0,
         13,
       ],
@@ -60,12 +63,12 @@ describe("visitorsTest", () => {
 
     runTest(input, [
       [
-        mockDeadlineSection(DateUtil.getDateLikeNormalPeople(1997, 6, 1, 23)),
+        mockDeadlineSection(DateUtil.getDateLastMoment(1997, 6 - 1, 1, 23)),
         0,
         13,
       ],
       [
-        mockDeadlineSection(DateUtil.getDateLikeNormalPeople(1997, 12, 31, 23)),
+        mockDeadlineSection(DateUtil.getDateLastMoment(1997, 12 - 1, 31, 23)),
         2,
         10,
       ],

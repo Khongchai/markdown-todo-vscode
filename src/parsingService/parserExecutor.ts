@@ -213,7 +213,14 @@ export class DiagnosticsParser {
             const newDate = this._getDateFromTime(this._tokenizer.getText());
             section.setDate(newDate);
             const diagnosticToAdd = section.runDiagnosticCheck();
-            section.setDiagnostic(diagnosticToAdd);
+            if (diagnosticToAdd) {
+              const range = this._getRange();
+              section.setPotentialDiagnostic({
+                range,
+                message: diagnosticToAdd.message,
+                severity: diagnosticToAdd.sev,
+              });
+            }
             continue;
           }
           this._handleDateTimeTokens(diagnostics, token);
@@ -438,7 +445,7 @@ export class DiagnosticsParser {
     const _dd = parseInt(dd);
     const _mm = parseInt(mm);
     const _yyyy = parseInt(yyyy);
-    const date = DateUtil.getDateLikeNormalPeople(_yyyy, _mm, _dd, 23);
+    const date = DateUtil.getDateLastMoment(_yyyy, _mm - 1, _dd, 23);
     if (!date.valueOf()) {
       // TODO throw parsing error, invalid date.
     }
