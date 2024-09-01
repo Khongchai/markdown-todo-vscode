@@ -24,6 +24,6 @@ Valid syntax #3
 - [ ] ...
 
 TODO:
-- [x] Write diagnostics tests
-- [ ] Make them pass.
-- [ ] Make sure this applies only to the top most date section (this means subtype of date is necessary). `if (!section.containsUnfinishedItems) return dayName + "Done";`
+- [ ] Fix line being messed up if typed just one 0
+- [x] Don't have to show date for all timed sections
+

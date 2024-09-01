@@ -29,6 +29,7 @@ function addDecoration(...args: Parameters<DateParsedEvent>) {
           fontStyle: "italic",
           margin: "0 0 0 3em",
           contentText: (() => {
+            if (section.getOrigin() === "time") return;
             const dayName = `(${section
               .getDate()
               .toLocaleDateString("en-US", { weekday: "long" })}) `;
@@ -40,39 +41,7 @@ function addDecoration(...args: Parameters<DateParsedEvent>) {
               return dayName;
             }
             if (!section.containsUnfinishedItems) return dayName + "Done";
-            if (diffDays < 0) {
-              return dayName + `Days past deadline: ${Math.abs(diffDays)}`;
-            }
-            const today = new Date();
-            const sectionDate = section.getDate();
-            const isToday =
-              new Date(
-                sectionDate.getFullYear(),
-                sectionDate.getMonth(),
-                sectionDate.getDay()
-              ).getTime() ===
-              new Date(
-                today.getFullYear(),
-                today.getMonth(),
-                today.getDay()
-              ).getTime();
-            if (isToday) {
-              const millisecondsRemaining =
-                sectionDate.getTime() - today.getTime();
-              const minutesRemaining = Math.floor(
-                millisecondsRemaining / 1000 / 60
-              );
-              if (minutesRemaining >= 60) {
-                const hoursRemaining = Math.floor(minutesRemaining / 60);
-                return `Remaining hours: ${hoursRemaining}`;
-              }
-              if (minutesRemaining >= 0) {
-                return `Remaining minutes: ${minutesRemaining}`;
-              }
-              return `Deadline has passed`;
-            } else {
-              return dayName + `Remaining days: ${diffDays}`;
-            }
+            return dayName;
           })(),
         },
       });

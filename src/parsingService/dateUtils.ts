@@ -18,4 +18,38 @@ export default class DateUtil {
   public static milliToDay(milli: number): number {
     return Math.floor(milli / 1000 / 60 / 60 / 24);
   }
+
+  /**
+   * Given a date, return how far it is from now (new Date())
+   *
+   * If the difference is in hours, just say how many hours away, omitting minutes and seconds.
+   * If the difference is in minutes, just say minutes, omitting seconds.
+   * If seconds, just say seconds.
+   *
+   * Example:
+   * 1. If the date is 1 hour and 30 minutes away, return "1 hour"
+   * 2. If the date is 1 hour and 30 seconds away, return "1 hour"
+   * 3. If the date is 1 minute and 30 seconds away, return "1 minute"
+   */
+  public static getDistanceFromDateToNow(date: Date): string {
+    const now = new Date();
+    const diff = date.getTime() - now.getTime();
+
+    const seconds = Math.floor(Math.abs(diff) / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+
+    let text = "";
+    if (hours > 0) {
+      text = `${hours} hour${hours > 1 ? "s" : ""}`;
+    } else if (minutes > 0) {
+      text = `${minutes} minute${minutes > 1 ? "s" : ""}`;
+    } else {
+      text = `${seconds} second${seconds !== 1 ? "s" : ""}`;
+    }
+
+    text += diff < 0 ? " past deadline" : " remaining";
+
+    return text;
+  }
 }

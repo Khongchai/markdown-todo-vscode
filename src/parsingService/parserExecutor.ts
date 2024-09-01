@@ -370,6 +370,7 @@ export class DiagnosticsParser {
     const moveDetail = this._parsingState.moveCommentDetail;
 
     const newSection = new DeadlineSection({
+      origin: token === Token.date ? "date" : "time",
       startPosition: this._tokenizer.getLineOffset() - text.length,
       line: this._tokenizer.getLine(),
       date: {

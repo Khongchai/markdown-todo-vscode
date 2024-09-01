@@ -34,6 +34,10 @@ export class DeadlineSection {
    * This collection does not include the `- [ ]` part
    */
   private _contentSet: Set<string>;
+  /**
+   * Whether this was created using date or time syntax.
+   */
+  private _origin: "date" | "time";
   private _line: number;
   private _date: {
     instance: Date;
@@ -60,7 +64,9 @@ export class DeadlineSection {
     skipConditions,
     config,
     startPosition,
+    origin,
   }: {
+    origin: "date" | "time";
     line: number;
     startPosition: number;
     date: {
@@ -73,6 +79,7 @@ export class DeadlineSection {
       settings: DaySettings;
     };
   }) {
+    this._origin = origin;
     this._items = [];
     this._contentSet = new Set();
     this._line = line;
@@ -206,20 +213,22 @@ export class DeadlineSection {
     const criticalMilli = DateUtil.dayToMilli(critical);
     const deadlineApproachingMilli = DateUtil.dayToMilli(deadlineApproaching);
 
+    const message = DateUtil.getDistanceFromDateToNow(itemDate);
+
     if (diffTime <= 0) {
       return {
         sev: DiagnosticSeverity.Error,
-        message: "This is overdue!",
+        message,
       };
     } else if (diffTime < criticalMilli) {
       return {
         sev: DiagnosticSeverity.Warning,
-        message: `You should do this soon!`,
+        message,
       };
     } else if (diffTime < deadlineApproachingMilli) {
       return {
         sev: DiagnosticSeverity.Information,
-        message: "The deadline is approaching.",
+        message,
       };
     }
 
@@ -256,5 +265,9 @@ export class DeadlineSection {
 
   public isRegisteredForExtraction(): boolean {
     return this._skipConditions.move && !!this._skipConditions.move.dateString;
+  }
+
+  public getOrigin() {
+    return this._origin;
   }
 }
