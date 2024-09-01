@@ -24,6 +24,7 @@ Valid syntax #3
 - [ ] ...
 
 TODO:
-- [ ] Fix line being messed up if typed just one 0
-- [x] Don't have to show date for all timed sections
+- [ ] Play around a bunch more
+- [ ] Bump version
+- [ ] Publish a new version
 
