@@ -18,7 +18,7 @@ function addDecoration(...args: Parameters<DateParsedEvent>) {
       number
     ];
     const diffDays = DateUtil.milliToDay(
-      section.getDate().getTime() - DateUtil.getDate().getTime()
+      section.getDate().getTime() - new Date().getTime()
     );
 
     // There can only be one date per line, so we're safe.

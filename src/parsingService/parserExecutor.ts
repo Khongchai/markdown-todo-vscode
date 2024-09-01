@@ -168,7 +168,7 @@ export class DiagnosticsParser {
     today?: Date;
     visitors?: ParserVisitor[];
   }) {
-    this._today = today ?? DateUtil.getDate();
+    this._today = today ?? new Date();
     this._isUsingControllledDate = !!today;
     this._settings = settings ?? {
       critical: 2,
@@ -191,7 +191,7 @@ export class DiagnosticsParser {
 
     const diagnostics: Diagnostic[] = [];
     if (!this._isUsingControllledDate) {
-      this._today = DateUtil.getDate();
+      this._today = new Date();
     }
 
     for (const token of this._tokenizer.tokenize(text)) {

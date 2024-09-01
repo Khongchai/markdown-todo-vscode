@@ -11,21 +11,6 @@ export default class DateUtil {
     return new Date(years, months, days, hours, 59, 59, 999);
   }
 
-  /**
-   * @returns today's date at midnight (00:00:00)
-   */
-  static getDate(): Date {
-    const today = new Date();
-    return new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-      0,
-      0,
-      0
-    );
-  }
-
   public static dayToMilli(dayCount: number): number {
     return 1000 * 60 * 60 * 24 * dayCount;
   }
