@@ -214,9 +214,16 @@ export class DiagnosticsParser {
             section.setDate(newDate);
             const diagnosticToAdd = section.runDiagnosticCheck();
             if (diagnosticToAdd) {
-              const range = this._getRange();
+              const timeRange = this._getRangeData();
+              const dateStart = section.getDateStartPosition();
+              const combinedRange = new Range(
+                timeRange.line,
+                dateStart,
+                timeRange.line,
+                timeRange.lineEnd
+              );
               section.setPotentialDiagnostic({
-                range,
+                range: combinedRange,
                 message: diagnosticToAdd.message,
                 severity: diagnosticToAdd.sev,
               });
@@ -363,6 +370,7 @@ export class DiagnosticsParser {
     const moveDetail = this._parsingState.moveCommentDetail;
 
     const newSection = new DeadlineSection({
+      startPosition: this._tokenizer.getLineOffset() - text.length,
       line: this._tokenizer.getLine(),
       date: {
         instance: date,
@@ -471,11 +479,23 @@ export class DiagnosticsParser {
    * @returns The range of the current `tokenizer.getText()`
    */
   private _getRange(): Range {
-    return new Range(
-      this._tokenizer.getLine(),
-      this._tokenizer.getLineOffset() - this._tokenizer.getText().length,
-      this._tokenizer.getLine(),
-      this._tokenizer.getLineOffset()
-    );
+    const data = this._getRangeData();
+    return new Range(data.line, data.startPosition, data.line, data.lineEnd);
+  }
+
+  /**
+   * You can't access data from new Range from some reason, so use this instead
+   */
+  private _getRangeData(): {
+    line: number;
+    lineEnd: number;
+    startPosition: number;
+  } {
+    return {
+      line: this._tokenizer.getLine(),
+      lineEnd: this._tokenizer.getLineOffset(),
+      startPosition:
+        this._tokenizer.getLineOffset() - this._tokenizer.getText().length,
+    };
   }
 }

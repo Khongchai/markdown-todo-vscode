@@ -34,7 +34,7 @@ export class DeadlineSection {
    * This collection does not include the `- [ ]` part
    */
   private _contentSet: Set<string>;
-  private _location: number;
+  private _line: number;
   private _date: {
     instance: Date;
     /**
@@ -52,14 +52,17 @@ export class DeadlineSection {
     today?: Date;
     settings: DaySettings;
   };
+  private _startPosition: number;
 
   public constructor({
     date,
     line,
     skipConditions,
     config,
+    startPosition,
   }: {
     line: number;
+    startPosition: number;
     date: {
       instance: Date;
       originalString: string;
@@ -72,7 +75,8 @@ export class DeadlineSection {
   }) {
     this._items = [];
     this._contentSet = new Set();
-    this._location = line;
+    this._line = line;
+    this._startPosition = startPosition;
     this._date = date;
     this._containsUnfinishedItems = undefined;
     this._dateDiagnosticRange = undefined;
@@ -233,7 +237,11 @@ export class DeadlineSection {
    * @returns Yeah, just to be clear - this is the line number of the date, not the todo items.
    */
   public getTheLineDateIsOn(): number {
-    return this._location;
+    return this._line;
+  }
+
+  public getDateStartPosition(): number {
+    return this._startPosition;
   }
 
   public getDate(): Date {
