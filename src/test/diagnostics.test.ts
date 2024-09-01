@@ -2,9 +2,12 @@ import { DiagnosticSeverity, Range } from "vscode";
 import { DiagnosticsParser } from "../parsingService/parserExecutor";
 import DateUtil from "../parsingService/dateUtils";
 
-const controlledToday = DateUtil.getDateLastMoment(1997, 8 - 1, 1, 23); // my bd :p
+/**
+ * This is the source of truth for today in all tests
+ */
+const todayAtMidnight = new Date(1997, 8 - 1, 1); // my bd :p
 const parser = new DiagnosticsParser({
-  today: controlledToday,
+  today: todayAtMidnight,
   daySettings: {
     critical: 2,
     deadlineApproaching: 4,
@@ -26,8 +29,8 @@ function assertResult(
       expect(actual[i].severity).toBe(expected[i].severity);
       expect(actual[i].range).toStrictEqual(expected[i].range);
     } catch (e) {
-      console.info("input: \n", input);
-      console.info(
+      console.error("input: \n", input);
+      console.error(
         `actual: ${JSON.stringify(actual[i].range)}, expected: ${JSON.stringify(
           expected[i].range
         )}`
@@ -116,45 +119,56 @@ describe("Parser returns the expected diagnostics", () => {
     ]);
   });
 
-  test.each([
-    [["01/08/1997", "09:00"].join("\n"), DiagnosticSeverity.Error],
-    [`01/08/1997 12:00`, DiagnosticSeverity.Error], // same as today at noon
-    // [["01/08/1997", "13:00"].join("\n"), DiagnosticSeverity.Warning],
-    // [["01/08/1997", "14:00"].join("\n"), DiagnosticSeverity.Warning],
-    // [["02/08/1997", "14:00"].join("\n"), DiagnosticSeverity.Warning],
-    // [["03/08/1997", "14:00"].join("\n"), DiagnosticSeverity.Information],
-  ])("Multiple dates with time -- one line %j", (dateIdentifier, sev) => {
-    const todayAtNoon = new Date(1997, 8 - 1, 1, 12);
-    const _parser = new DiagnosticsParser({
-      today: todayAtNoon,
-      daySettings: {
-        critical: 2,
-        deadlineApproaching: 4,
-      },
-    });
+  describe("Multiple dates with time: oneline", () => {
+    test("Date and time on different line, past deadline", () => {
+      const input = ["01/08/1997", "09:00", "- [ ] something"].join("\n");
 
-    const input = [dateIdentifier, "- [ ] something"].join("\n");
-
-    assertResult(
-      input,
-      [
+      assertResult(input, [
         {
-          // the time
-          severity: sev,
+          severity: DiagnosticSeverity.Error,
           range: new Range(1, 0, 1, 5),
         },
         {
-          // the item
-          severity: sev,
+          severity: DiagnosticSeverity.Error,
           range: new Range(2, 0, 2, 15),
         },
-      ],
-      _parser
-    );
+      ]);
+    });
+
+    test("Date and time on same line, past deadline", () => {
+      const dateLength = "01/08/1997 09:00".length;
+      const input = ["01/08/1997 09:00", "- [ ] something"].join("\n");
+
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(0, 0, 0, dateLength),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(1, 0, 1, 15),
+        },
+      ]);
+    });
+
+    test("Date and time on different line, deadline approaching", () => {
+      const input = ["01/08/1997", "13:00", "- [ ] something"].join("\n");
+
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Warning,
+          range: new Range(1, 0, 1, 5),
+        },
+        {
+          severity: DiagnosticSeverity.Warning,
+          range: new Range(2, 0, 2, 15),
+        },
+      ]);
+    });
   });
 
   test("Multiple dates with time: todos in same day throwing different diagnostics error.", () => {
-    const todayAtNoon = DateUtil.getDateLastMoment(1997, 8 - 1, 1, 12);
+    const todayAtNoon = new Date(1997, 8 - 1, 1, 12);
     const _parser = new DiagnosticsParser({
       today: todayAtNoon,
       daySettings: {
@@ -174,7 +188,9 @@ describe("Parser returns the expected diagnostics", () => {
       todoItem, // should show warning, the time is within the deadline approaching time.
       "18:00",
       todoItem, // should show warning, the time is within the deadline approaching time.
-      "02/08/1997 13:00", // should show Information, the date is in the future.
+      "04/08/1997 13:00", // should show Information, the date is in the future.
+      todoItem,
+      "31/08/1997", // nichts, die Zeit ist in der Zukunft
       todoItem,
     ].join("\n");
 
@@ -182,16 +198,16 @@ describe("Parser returns the expected diagnostics", () => {
       input,
       [
         {
-          severity: DiagnosticSeverity.Error,
+          severity: DiagnosticSeverity.Warning,
           range: new Range(0, 0, 0, 10),
         },
         {
-          severity: DiagnosticSeverity.Error,
+          severity: DiagnosticSeverity.Warning,
           range: new Range(1, 0, 1, 15),
         },
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(2, 0, 2, 10),
+          range: new Range(2, 0, 2, 5),
         },
         {
           severity: DiagnosticSeverity.Error,
@@ -199,7 +215,7 @@ describe("Parser returns the expected diagnostics", () => {
         },
         {
           severity: DiagnosticSeverity.Warning,
-          range: new Range(4, 0, 4, 10),
+          range: new Range(4, 0, 4, 5),
         },
         {
           severity: DiagnosticSeverity.Warning,
@@ -207,7 +223,7 @@ describe("Parser returns the expected diagnostics", () => {
         },
         {
           severity: DiagnosticSeverity.Warning,
-          range: new Range(6, 0, 6, 10),
+          range: new Range(6, 0, 6, 5),
         },
         {
           severity: DiagnosticSeverity.Warning,
@@ -215,7 +231,7 @@ describe("Parser returns the expected diagnostics", () => {
         },
         {
           severity: DiagnosticSeverity.Information,
-          range: new Range(8, 0, 8, 10),
+          range: new Range(8, 0, 8, 16),
         },
         {
           severity: DiagnosticSeverity.Information,
