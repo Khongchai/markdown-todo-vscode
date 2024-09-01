@@ -30,7 +30,6 @@ function addDecoration(...args: Parameters<DateParsedEvent>) {
             const dayName = `(${section
               .getDate()
               .toLocaleDateString("en-US", { weekday: "long" })}) `;
-
             if (!section.hasItems) {
               if (section.isRegisteredForExtraction()) {
                 return dayName + "All items moved";
