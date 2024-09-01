@@ -1,7 +1,8 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
-import { ReportedDiagnostic, SectionMoveDetail } from "./types";
+import { DaySettings, ReportedDiagnostic, SectionMoveDetail } from "./types";
 import { messages } from "./constants";
 import { ParsedItem } from "./parsedItem";
+import DateUtil from "./dateUtils";
 
 interface SkipSwitch {
   /**
@@ -40,34 +41,47 @@ export class DeadlineSection {
   private _location: number;
   private _date: {
     instance: Date;
+    /**
+     * Just something we use as identity.
+     */
     originalString: string;
   };
   private _containsUnfinishedItems?: boolean;
   private _potentialDiagnosticsRange?: Diagnostic;
   private _skipConditions: SkipSwitch;
+  private _config: {
+    now: Date;
+    settings: DaySettings;
+  };
 
-  constructor({
+  public constructor({
     date,
     line,
-    sectionDiagnostics,
     skipConditions,
+    config,
   }: {
-    sectionDiagnostics: ReportedDiagnostic | null;
     line: number;
     date: {
       instance: Date;
       originalString: string;
     };
     skipConditions: SkipSwitch;
+    config: {
+      now: Date;
+      settings: DaySettings;
+    };
   }) {
     this._items = [];
     this._contentSet = new Set();
-    this._sectionDiagnostics = sectionDiagnostics;
+    this._sectionDiagnostics = null;
     this._location = line;
     this._date = date;
     this._containsUnfinishedItems = undefined;
     this._potentialDiagnosticsRange = undefined;
     this._skipConditions = skipConditions;
+    this._config = {
+      ...config,
+    };
   }
 
   /**
@@ -144,12 +158,12 @@ export class DeadlineSection {
     return this._items.length > 0;
   }
 
-  public setDiagnostic(diagnostic: ReportedDiagnostic | null) {
-    this._sectionDiagnostics = diagnostic;
+  public setDate(date: Date) {
+    this._date.instance = date;
   }
 
-  public getSeverity(): ReportedDiagnostic | null {
-    return this._sectionDiagnostics;
+  public setDiagnostic(diagnostic: ReportedDiagnostic | null) {
+    this._sectionDiagnostics = diagnostic;
   }
 
   public addTodoItem(item: string, line: number, isChecked: boolean) {
@@ -185,10 +199,36 @@ export class DeadlineSection {
     this._items = itemsNotDeposited;
   }
 
+  public runDiagnosticCheck(): Readonly<ReportedDiagnostic> | null {
+    const diffDays = DateUtil.getDiffInDays(
+      this._date.instance,
+      this._config.now
+    );
+    const { critical, deadlineApproaching } = this._config.settings;
+    if (diffDays < 0) {
+      this._sectionDiagnostics = {
+        sev: DiagnosticSeverity.Error,
+        message: "This is overdue!",
+      };
+    } else if (diffDays < critical) {
+      this._sectionDiagnostics = {
+        sev: DiagnosticSeverity.Warning,
+        message: `You should do this soon!`,
+      };
+    } else if (diffDays < deadlineApproaching) {
+      this._sectionDiagnostics = {
+        sev: DiagnosticSeverity.Information,
+        message: "The deadline is approaching.",
+      };
+    }
+
+    return this._sectionDiagnostics;
+  }
+
   /**
    * Possible diagnostics error. This section will apply this diagnostics only if it is not empty.
    */
-  public setPotentialDiagnostics(diagnostics: Diagnostic) {
+  public setPotentialDiagnostic(diagnostics: Diagnostic): void {
     this._potentialDiagnosticsRange = diagnostics;
   }
 

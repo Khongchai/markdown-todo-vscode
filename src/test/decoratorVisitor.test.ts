@@ -1,6 +1,6 @@
+import DateUtil from "../parsingService/dateUtils";
 import { DateParsedEvent, DiagnosticsParser } from "../parsingService/parser";
 import { DeadlineSection } from "../parsingService/todoSection";
-import DateUtil from "../parsingService/utils";
 
 // Modify this later when we have more visitors.
 type Expected = Parameters<DateParsedEvent>;

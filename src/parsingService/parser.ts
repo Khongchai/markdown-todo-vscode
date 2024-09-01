@@ -204,7 +204,22 @@ export class DiagnosticsParser {
       }
 
       switch (token) {
-        case Token.date || Token.time: {
+        case Token.time: {
+          const section = this._parsingState.todoSections.at(-1);
+          const isTimeOnSameLineAsDate =
+            this._tokenizer.getLine() === section?.getTheLineDateIsOn();
+          // Update existing diagnostics
+          if (isTimeOnSameLineAsDate) {
+            const newDate = this._getDateFromTime(this._tokenizer.getText());
+            section.setDate(newDate);
+            const diagnosticToAdd = section.runDiagnosticCheck();
+            section.setDiagnostic(diagnosticToAdd);
+            continue;
+          }
+          this._handleDateTimeTokens(diagnostics, token);
+          continue;
+        }
+        case Token.date: {
           this._handleDateTimeTokens(diagnostics, token);
           continue;
         }
@@ -282,7 +297,7 @@ export class DiagnosticsParser {
       const shouldHighlightDate = section.containsUnfinishedItems;
       if (shouldHighlightDate) {
         // Order so that we highlight the date first.
-        // This doesn't make a difference vissually, but it's easier to reason about when writing tests.
+        // This doesn't make a difference visually, but it's easier to reason about when writing tests.
         section.addDateDiagnostics(diagnostics);
         section.addTodoItemsDiagnostics(diagnostics);
       }
@@ -335,14 +350,12 @@ export class DiagnosticsParser {
     const text = this._tokenizer.getText();
     const date =
       token === Token.date ? this._getDate(text) : this._getDateFromTime(text);
-    const diagnosticToReport = this._checkDiagnosticSeverity(date);
 
     const skip = this._parsingState.skipNextSection;
     const moved = this._parsingState.moveNextSection;
     const moveDetail = this._parsingState.moveCommentDetail;
 
-    const currentSection = new DeadlineSection({
-      sectionDiagnostics: diagnosticToReport,
+    const newSection = new DeadlineSection({
       line: this._tokenizer.getLine(),
       date: {
         instance: date,
@@ -352,13 +365,19 @@ export class DiagnosticsParser {
         skip,
         move: moved && moveDetail ? { ...moveDetail } : false,
       },
+      config: {
+        now: this._today,
+        settings: this._settings,
+      },
     });
+
+    const diagnosticToReport = newSection.runDiagnosticCheck();
 
     if (this._parsingState.moveNextSection) {
       const commentDetail = this._parsingState.moveCommentDetail;
       this._moveBank.registerTransfer({
         key: commentDetail.dateString,
-        value: currentSection,
+        value: newSection,
       });
       this._parsingState.moveNextSection = false;
       commentDetail.reset();
@@ -367,10 +386,10 @@ export class DiagnosticsParser {
 
     this._moveBank.registerAccount({
       key: this._tokenizer.getText(),
-      value: currentSection,
+      value: newSection,
     });
 
-    this._parsingState.todoSections.push(currentSection);
+    this._parsingState.todoSections.push(newSection);
     this._parsingState.isParsingTodoSectionItem = true;
 
     if (!diagnosticToReport) {
@@ -378,13 +397,17 @@ export class DiagnosticsParser {
     }
 
     const range = this._getRange();
-    currentSection.setPotentialDiagnostics({
+    newSection.setPotentialDiagnostic({
       range,
       message: diagnosticToReport.message,
       severity: diagnosticToReport.sev,
     });
   }
 
+  /**
+   * Set time from timestring to the last section's date if exists,
+   * otherwise use now from `new Date()`.
+   */
   private _getDateFromTime(timeString: string): Date {
     const [hour, minute] = timeString.split(":");
     let parsedHour = Number(hour);
@@ -434,31 +457,6 @@ export class DiagnosticsParser {
     }
 
     return date;
-  }
-
-  private _checkDiagnosticSeverity(date: Date): ReportedDiagnostic | null {
-    const diffDays = DateUtil.getDiffInDays(date, this._today);
-    const { critical, deadlineApproaching } = this._settings;
-    if (diffDays < 0) {
-      return {
-        sev: DiagnosticSeverity.Error,
-        message: "This is overdue!",
-      };
-    }
-    if (diffDays < critical) {
-      return {
-        sev: DiagnosticSeverity.Warning,
-        message: `You should do this soon!`,
-      };
-    }
-    if (diffDays < deadlineApproaching) {
-      return {
-        sev: DiagnosticSeverity.Information,
-        message: "The deadline is approaching.",
-      };
-    }
-
-    return null;
   }
 
   /**
