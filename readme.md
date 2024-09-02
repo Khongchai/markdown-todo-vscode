@@ -88,16 +88,31 @@ If you a date is found to be inside a codeblock, it is ignored.
 If you want to skip a section for whatever reasons -- maybe you got lazy and wanted to just not do the thing, but want don't want to delete the list -- you can add a  `<!-- skip -->` comment anywhere before a section to opt it out of the deadline diagnostics.
 
 ```md
-22/07/2023
-- [ ] Prep task
+<!-- today is 02/09/2024 21:50 -->
+
+30/08/2024
+- [ ] Learn Klingon
+
 <!-- skip -->
-<!-- got lazy -->
-23/07/2023
-- [ ] Task1
-- [ ] Task2
+01/09/2024 (this date section, including any time sections within is skipped)
+- [ ] Prep task
+05h:00m 
+- [ ] Prep task
+
+02/09/2024
+<!-- skip -->
+02h:00m (only this time section is skipped)
+- [ ] Prep task
+09h:00m
+- [ ] Prep task
+22h:00m
+- [ ] Something else
 ```
 
+## Result
 
-# Full Example (2 files)
+![Skipping result](assets/skipping.png)
 
-![Full example with all functionalities](assets/full-example.png)
+# Long Example
+
+![long example](assets/long-example.png)
