@@ -6,17 +6,17 @@ If the deadline is approaching, you get a squiggly line under the date. The rema
 
 You can also add times above any group of lists for more granular control. Each timed sections are evaluated separately.
 
-# **Adding a Deadline Section**
+# **Adding a TODO Section**
 
 ```md
 <!-- "Today" is 02/09/2024 20:00 PM -->
-# 22/07/2023
-## 19:00
+# 02/09/2024 (today)
+## 19h:60m
 - [ ] Turn in math homework 
-## 21:00
+## 22h:60m
 - [ ] Learn German
-# 27/07/2023
-_No time, this defaults to 23:59:59 of a given day_
+# 03/09/2024 (tomorrow)
+_No time, this defaults to 23:59_
 - [ ] Turn in English homework
 - [ ] Learn French
 ```
@@ -30,15 +30,17 @@ Everything under a deadline is grouped as one. To begin a new deadline, simply a
 # **Combining With Existing Markdown Syntaxes**
 
 ```md
-<!-- "Today" is 28/07/2023 -->
-## 23/07/2023
+<!-- "Today" is 02/09/2024 21:00 -->
+## 20/08/2024
 This extension non-invasively extends markdown syntax, so you can add whatever you want **anywhere you want**. For example, this paragraph could have been an explanation of the two todo lists below. 
 - [ ] Study for math test
 - [x] ~~_Study for French test_~~
 - [x] ~~_Practice violin_~~
-## 25/07/2023
+## 02/09/2024
+### 22h:00m
 - [ ] [Watch this video](https://example.com)
-## 27/07/2023 <!-- A date will not be underlined if it does not contain any lists. -->
+## 27/09/2024
+- [x] Something
 ```
 
 ## Result (left vscode, right rendered markdown)

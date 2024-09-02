@@ -40,7 +40,10 @@ export default class DateUtil {
     const hours = Math.floor(minutes / 60);
 
     let text = "";
-    if (hours > 0) {
+    if (hours > 24) {
+      const days = Math.floor(hours / 24);
+      text = `${days} day${days > 1 ? "s" : ""}`;
+    } else if (hours > 0) {
       text = `${hours} hour${hours > 1 ? "s" : ""}`;
     } else if (minutes > 0) {
       text = `${minutes} minute${minutes > 1 ? "s" : ""}`;
