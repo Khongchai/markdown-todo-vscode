@@ -550,6 +550,10 @@ describe("Skipping diagnostics", () => {
         "<!-- skip -->",
         "<!-- got lazy -->",
         "01/06/1997",
+        "06h:00m",
+        todoItem,
+        "07h:00m",
+        todoItem,
         todoItem,
         "02/06/1997",
         todoItem,
@@ -563,6 +567,37 @@ describe("Skipping diagnostics", () => {
         {
           severity: DiagnosticSeverity.Error,
           range: new Range(1, 0, 1, todoItem.length),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(10, 0, 10, datePattern.length),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(11, 0, 11, todoItem.length),
+        },
+      ]);
+    });
+    test("Skipping time should affect just the time", () => {
+      const input3 = [
+        "30/05/1997",
+        "<!-- skip -->",
+        "09h:00m",
+        todoItem,
+        "23h:00m",
+        todoItem,
+        "02/06/1997",
+        todoItem,
+      ].join("\n");
+
+      assertResult(input3, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(4, 0, 4, timePattern.length),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(5, 0, 5, todoItem.length),
         },
         {
           severity: DiagnosticSeverity.Error,

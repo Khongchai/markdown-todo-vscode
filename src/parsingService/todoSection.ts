@@ -56,6 +56,10 @@ export class DeadlineSection {
     today?: Date;
     settings: DaySettings;
   };
+  /**
+   * The parent section. This only exists if this section is a time section.
+   */
+  private _parent: DeadlineSection | null;
   private _startPosition: number;
 
   public constructor({
@@ -88,6 +92,7 @@ export class DeadlineSection {
     this._containsUnfinishedItems = undefined;
     this._dateDiagnosticRange = undefined;
     this._skipConditions = skipConditions;
+    this._parent = null;
     this._config = {
       settings: config.settings,
       today: config.now,
@@ -129,6 +134,14 @@ export class DeadlineSection {
     if (!this._dateDiagnosticRange) return;
 
     diagnostics.push(this._dateDiagnosticRange);
+  }
+
+  public setParent(parent: DeadlineSection) {
+    this._parent = parent;
+  }
+
+  public getParent(): DeadlineSection | null {
+    return this._parent;
   }
 
   /**
@@ -264,6 +277,10 @@ export class DeadlineSection {
 
   public isRegisteredForExtraction(): boolean {
     return this._skipConditions.move && !!this._skipConditions.move.dateString;
+  }
+
+  public isSkipped(): boolean {
+    return this._skipConditions.skip;
   }
 
   public getOrigin() {
