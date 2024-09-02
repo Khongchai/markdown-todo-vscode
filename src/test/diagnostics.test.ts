@@ -551,6 +551,8 @@ describe("Skipping diagnostics", () => {
         "<!-- got lazy -->",
         "01/06/1997",
         todoItem,
+        "02/06/1997",
+        todoItem,
       ].join("\n");
 
       assertResult(input3, [
@@ -561,6 +563,14 @@ describe("Skipping diagnostics", () => {
         {
           severity: DiagnosticSeverity.Error,
           range: new Range(1, 0, 1, todoItem.length),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(6, 0, 6, datePattern.length),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(7, 0, 7, todoItem.length),
         },
       ]);
     });

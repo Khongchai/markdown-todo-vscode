@@ -235,6 +235,7 @@ export class DiagnosticsParser {
         }
         case Token.date: {
           this._handleDateTimeTokens(diagnostics, token);
+          this._parsingState.skipNextSection = false;
           continue;
         }
         case Token.finishedTodoItem:
