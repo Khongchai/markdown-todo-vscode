@@ -1,6 +1,12 @@
 import { DiagnosticSeverity, Range } from "vscode";
 import { DiagnosticsParser } from "../parsingService/parserExecutor";
-import DateUtil from "../parsingService/dateUtils";
+import {
+  dateAndTimePattern,
+  datePattern,
+  timePattern,
+} from "../parsingService/constants";
+
+const todoItem = "- [ ] Take out the trash";
 
 /**
  * This is the source of truth for today in all tests
@@ -48,7 +54,7 @@ describe("Parser returns the expected diagnostics", () => {
   });
 
   test("Single date with time", () => {
-    const input = ["01/06/1997 15:00"].join("\n");
+    const input = ["01/06/1997 15h:00m"].join("\n");
     assertResult(input, []);
   });
 
@@ -69,52 +75,52 @@ describe("Parser returns the expected diagnostics", () => {
   test("Multiple dates with no time", () => {
     const input = [
       "30/07/1997",
-      "- [ ] Take out the trash",
+      todoItem,
       "01/08/1997",
       "01/08/1997",
-      "- [ ] Take out the trash",
+      todoItem,
       "01/08/1997",
-      "- [ ] Take out the trash",
+      todoItem,
       "03/08/1997",
-      "- [ ] Take out the trash",
+      todoItem,
       "05/08/1997",
-      "- [ ] Take out the trash",
+      todoItem,
       "07/08/1997",
-      "- [ ] Take out the trash",
+      todoItem,
     ].join("\n");
 
     assertResult(input, [
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(0, 0, 0, 10),
+        range: new Range(0, 0, 0, datePattern.length),
       },
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(1, 0, 1, 24),
+        range: new Range(1, 0, 1, todoItem.length),
       },
       {
         severity: DiagnosticSeverity.Warning,
-        range: new Range(3, 0, 3, 10),
+        range: new Range(3, 0, 3, datePattern.length),
       },
       {
         severity: DiagnosticSeverity.Warning,
-        range: new Range(4, 0, 4, 24),
+        range: new Range(4, 0, 4, todoItem.length),
       },
       {
         severity: DiagnosticSeverity.Warning,
-        range: new Range(5, 0, 5, 10),
+        range: new Range(5, 0, 5, datePattern.length),
       },
       {
         severity: DiagnosticSeverity.Warning,
-        range: new Range(6, 0, 6, 24),
+        range: new Range(6, 0, 6, todoItem.length),
       },
       {
         severity: DiagnosticSeverity.Information,
-        range: new Range(7, 0, 7, 10),
+        range: new Range(7, 0, 7, datePattern.length),
       },
       {
         severity: DiagnosticSeverity.Information,
-        range: new Range(8, 0, 8, 24),
+        range: new Range(8, 0, 8, todoItem.length),
       },
     ]);
   });
@@ -129,18 +135,18 @@ describe("Parser returns the expected diagnostics", () => {
           deadlineApproaching: 4,
         },
       });
-      const input = ["01/08/1997", "09:00", "- [ ] something"].join("\n");
+      const input = ["01/08/1997", "09h:00m", todoItem].join("\n");
 
       assertResult(
         input,
         [
           {
             severity: DiagnosticSeverity.Error,
-            range: new Range(1, 0, 1, 5),
+            range: new Range(1, 0, 1, timePattern.length),
           },
           {
             severity: DiagnosticSeverity.Error,
-            range: new Range(2, 0, 2, 15),
+            range: new Range(2, 0, 2, todoItem.length),
           },
         ],
         _parser
@@ -156,19 +162,18 @@ describe("Parser returns the expected diagnostics", () => {
           deadlineApproaching: 4,
         },
       });
-      const dateLength = "01/08/1997 09:00".length;
-      const input = ["01/08/1997 09:00", "- [ ] something"].join("\n");
+      const input = ["01/08/1997 09h:00m", todoItem].join("\n");
 
       assertResult(
         input,
         [
           {
             severity: DiagnosticSeverity.Error,
-            range: new Range(0, 0, 0, dateLength),
+            range: new Range(0, 0, 0, dateAndTimePattern.length),
           },
           {
             severity: DiagnosticSeverity.Error,
-            range: new Range(1, 0, 1, 15),
+            range: new Range(1, 0, 1, todoItem.length),
           },
         ],
         _parser
@@ -184,18 +189,18 @@ describe("Parser returns the expected diagnostics", () => {
           deadlineApproaching: 4,
         },
       });
-      const input = ["01/08/1997", "13:00", "- [ ] something"].join("\n");
+      const input = ["01/08/1997", "13h:00m", todoItem].join("\n");
 
       assertResult(
         input,
         [
           {
             severity: DiagnosticSeverity.Warning,
-            range: new Range(1, 0, 1, 5),
+            range: new Range(1, 0, 1, timePattern.length),
           },
           {
             severity: DiagnosticSeverity.Warning,
-            range: new Range(2, 0, 2, 15),
+            range: new Range(2, 0, 2, todoItem.length),
           },
         ],
         _parser
@@ -213,18 +218,16 @@ describe("Parser returns the expected diagnostics", () => {
       },
     });
 
-    const todoItem = "- [ ] something";
-
     const input = [
       "01/08/1997",
       todoItem, // should show warning, without time defaults to the very last moment of the day.
-      "11:00",
+      "11h:00m",
       todoItem, // should show error, the time is before the current time.
-      "13:00",
+      "13h:00m",
       todoItem, // should show warning, the time is within the deadline approaching time.
-      "18:00",
+      "18h:00m",
       todoItem, // should show warning, the time is within the deadline approaching time.
-      "04/08/1997 13:00", // should show Information, the date is in the future.
+      "04/08/1997 13h:00m", // should show Information, the date is in the future.
       todoItem,
       "31/08/1997", // nichts, die Zeit ist in der Zukunft
       todoItem,
@@ -235,43 +238,43 @@ describe("Parser returns the expected diagnostics", () => {
       [
         {
           severity: DiagnosticSeverity.Warning,
-          range: new Range(0, 0, 0, 10),
+          range: new Range(0, 0, 0, datePattern.length),
         },
         {
           severity: DiagnosticSeverity.Warning,
-          range: new Range(1, 0, 1, 15),
+          range: new Range(1, 0, 1, todoItem.length),
         },
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(2, 0, 2, 5),
+          range: new Range(2, 0, 2, timePattern.length),
         },
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(3, 0, 3, 15),
+          range: new Range(3, 0, 3, todoItem.length),
         },
         {
           severity: DiagnosticSeverity.Warning,
-          range: new Range(4, 0, 4, 5),
+          range: new Range(4, 0, 4, timePattern.length),
         },
         {
           severity: DiagnosticSeverity.Warning,
-          range: new Range(5, 0, 5, 15),
+          range: new Range(5, 0, 5, todoItem.length),
         },
         {
           severity: DiagnosticSeverity.Warning,
-          range: new Range(6, 0, 6, 5),
+          range: new Range(6, 0, 6, timePattern.length),
         },
         {
           severity: DiagnosticSeverity.Warning,
-          range: new Range(7, 0, 7, 15),
+          range: new Range(7, 0, 7, todoItem.length),
         },
         {
           severity: DiagnosticSeverity.Information,
-          range: new Range(8, 0, 8, 16),
+          range: new Range(8, 0, 8, dateAndTimePattern.length),
         },
         {
           severity: DiagnosticSeverity.Information,
-          range: new Range(9, 0, 9, 15),
+          range: new Range(9, 0, 9, todoItem.length),
         },
       ],
       _parser
@@ -280,7 +283,7 @@ describe("Parser returns the expected diagnostics", () => {
 });
 
 describe("(Integration tests) Dates with todos", () => {
-  const todoLine1 = "- [ ] Take out the trash";
+  const todoLine1 = todoItem;
   const todoLine2 = "- [ ] Do the dishes";
   const nonTodoLine = "This is not a todo";
   test("Case 1", () => {
@@ -291,7 +294,7 @@ describe("(Integration tests) Dates with todos", () => {
     assertResult(input, [
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(0, 0, 0, 10),
+        range: new Range(0, 0, 0, datePattern.length),
       },
       {
         severity: DiagnosticSeverity.Error,
@@ -318,7 +321,7 @@ describe("(Integration tests) Dates with todos", () => {
     assertResult(input, [
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(0, 0, 0, 10),
+        range: new Range(0, 0, 0, datePattern.length),
       },
       {
         severity: DiagnosticSeverity.Error,
@@ -348,7 +351,7 @@ describe("(Integration tests) Dates with todos", () => {
     assertResult(input, [
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(0, 0, 0, 10),
+        range: new Range(0, 0, 0, datePattern.length),
       },
       {
         severity: DiagnosticSeverity.Error,
@@ -364,27 +367,19 @@ describe("Parser does not report date within a comment", () => {
     assertResult(input, []);
   });
   test("Incomplete comment and todo list", () => {
-    const input = [
-      "<!-- 01/06/1997",
-      "01/06/1997",
-      "- [ ] Take out the trash",
-    ].join("\n");
+    const input = ["<!-- 01/06/1997", "01/06/1997", todoItem].join("\n");
     assertResult(input, []);
   });
 
   test("Comment and todo list", () => {
-    const input = [
-      "<!-- 01/06/1997 -->",
-      "01/06/1997",
-      "- [ ] Take out the trash",
-    ].join("\n");
+    const input = ["<!-- 01/06/1997 -->", "01/06/1997", todoItem].join("\n");
     assertResult(input, [
       {
-        range: new Range(1, 0, 1, 10),
+        range: new Range(1, 0, 1, datePattern.length),
         severity: DiagnosticSeverity.Error,
       },
       {
-        range: new Range(2, 0, 2, 24),
+        range: new Range(2, 0, 2, todoItem.length),
         severity: DiagnosticSeverity.Error,
       },
     ]);
@@ -396,10 +391,10 @@ describe("Parser does not report date within a code block", () => {
     const input = [
       "```",
       "01/06/1997",
-      "- [ ] Take out the trash",
+      todoItem,
       "- [ ] Do the dishes",
       "01/06/1997",
-      "- [ ] Take out the trash",
+      todoItem,
       "- [ ] Do the dishes",
     ].join("\n");
 
@@ -410,21 +405,21 @@ describe("Parser does not report date within a code block", () => {
       "```",
       "01/06/1997",
       "```",
-      "- [ ] Take out the trash",
+      todoItem,
       "- [ ] Do the dishes",
       "01/06/1997",
-      "- [ ] Take out the trash",
+      todoItem,
       "- [ ] Do the dishes",
     ].join("\n");
 
     assertResult(input, [
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(5, 0, 5, 10),
+        range: new Range(5, 0, 5, datePattern.length),
       },
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(6, 0, 6, 24),
+        range: new Range(6, 0, 6, todoItem.length),
       },
       {
         severity: DiagnosticSeverity.Error,
@@ -450,7 +445,7 @@ describe("Finished list don't get reported", () => {
     assertResult(input, [
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(2, 0, 2, 10),
+        range: new Range(2, 0, 2, datePattern.length),
       },
       {
         severity: DiagnosticSeverity.Error,
@@ -463,45 +458,45 @@ describe("Finished list don't get reported", () => {
     const input = [
       "01/06/1997",
       "- [x] Take out the trash",
-      "- [ ] Take out the trash",
-      "- [ ] Take out the trash",
+      todoItem,
+      todoItem,
     ].join("\n");
 
     assertResult(input, [
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(0, 0, 0, 10),
+        range: new Range(0, 0, 0, datePattern.length),
       },
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(2, 0, 2, 24),
+        range: new Range(2, 0, 2, todoItem.length),
       },
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(3, 0, 3, 24),
+        range: new Range(3, 0, 3, todoItem.length),
       },
     ]);
 
     const input2 = [
       "01/06/1997",
-      "- [ ] Take out the trash",
+      todoItem,
       "- [x] Take out the trash",
-      "- [ ] Take out the trash",
+      todoItem,
       "- [x] Take out the trash",
     ].join("\n");
 
     assertResult(input2, [
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(0, 0, 0, 10),
+        range: new Range(0, 0, 0, datePattern.length),
       },
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(1, 0, 1, 24),
+        range: new Range(1, 0, 1, todoItem.length),
       },
       {
         severity: DiagnosticSeverity.Error,
-        range: new Range(3, 0, 3, 24),
+        range: new Range(3, 0, 3, todoItem.length),
       },
     ]);
   });
@@ -510,11 +505,7 @@ describe("Finished list don't get reported", () => {
 describe("Skipping diagnostics", () => {
   describe("Skipping with skip", () => {
     test("Just skip ident", () => {
-      const input = [
-        "<!-- skip -->",
-        "01/06/1997",
-        "- [ ] Take out the trash",
-      ].join("\n");
+      const input = ["<!-- skip -->", "01/06/1997", todoItem].join("\n");
 
       assertResult(input, []);
     });
@@ -524,7 +515,7 @@ describe("Skipping diagnostics", () => {
         "<!-- skip -->",
         "<!-- got lazy -->",
         "01/06/1997",
-        "- [ ] Take out the trash",
+        todoItem,
       ].join("\n");
 
       assertResult(input, []);
@@ -533,21 +524,21 @@ describe("Skipping diagnostics", () => {
     test("Skipping in the middle of a timed section", () => {
       const input = [
         "01/06/1997",
-        "13:00",
-        "- [ ] Take out the trash",
+        "13h:00m",
+        todoItem,
         "<!-- skip -->",
-        "14:00",
-        "- [ ] Take out the trash",
+        "14h:00m",
+        todoItem,
       ].join("\n");
 
       assertResult(input, [
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(1, 0, 1, 5),
+          range: new Range(1, 0, 1, 7),
         },
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(2, 0, 2, 24),
+          range: new Range(2, 0, 2, todoItem.length),
         },
       ]);
     });
@@ -555,21 +546,21 @@ describe("Skipping diagnostics", () => {
     test("Skip ident with another comment and todo list", () => {
       const input3 = [
         "30/05/1997",
-        "- [ ] Take out the trash",
+        todoItem,
         "<!-- skip -->",
         "<!-- got lazy -->",
         "01/06/1997",
-        "- [ ] Take out the trash",
+        todoItem,
       ].join("\n");
 
       assertResult(input3, [
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(0, 0, 0, 10),
+          range: new Range(0, 0, 0, datePattern.length),
         },
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(1, 0, 1, 24),
+          range: new Range(1, 0, 1, todoItem.length),
         },
       ]);
     });
@@ -577,20 +568,16 @@ describe("Skipping diagnostics", () => {
 
   describe("Skipping with moved", () => {
     test("Moved without date - incorrect syntax", () => {
-      const input = [
-        "<!-- moved -->",
-        "01/06/1997",
-        "- [ ] Take out the trash",
-      ].join("\n");
+      const input = ["<!-- moved -->", "01/06/1997", todoItem].join("\n");
 
       assertResult(input, [
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(1, 0, 1, 10),
+          range: new Range(1, 0, 1, datePattern.length),
         },
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(2, 0, 2, 24),
+          range: new Range(2, 0, 2, todoItem.length),
         },
       ]);
     });
@@ -599,11 +586,11 @@ describe("Skipping diagnostics", () => {
       const input = [
         "<!-- moved 09/10/1997 -->",
         "15/08/1997",
-        "- [ ] Take out the trash",
+        todoItem,
         "05/09/1997",
-        "- [ ] Take out the trash",
+        todoItem,
         "08/09/1997",
-        "- [ ] Take out the trash",
+        todoItem,
       ].join("\n");
 
       // two lines highlighted, the moved line and the item line in the next section without its date.
@@ -614,17 +601,15 @@ describe("Skipping diagnostics", () => {
         },
         {
           severity: DiagnosticSeverity.Information,
-          range: new Range(2, 0, 2, 24),
+          range: new Range(2, 0, 2, todoItem.length),
         },
       ]);
     });
 
     test("Moved with date - correct syntax - moved date same as moved section", () => {
-      const input = [
-        "<!-- moved 01/06/1997 -->",
-        "01/06/1997",
-        "- [ ] Take out the trash",
-      ].join("\n");
+      const input = ["<!-- moved 01/06/1997 -->", "01/06/1997", todoItem].join(
+        "\n"
+      );
 
       assertResult(input, [
         // highlighted because the moved date is the same as the date of the section
@@ -635,7 +620,7 @@ describe("Skipping diagnostics", () => {
         // highlighted because the date is registered to be moved but the move wasn't successful.
         {
           severity: DiagnosticSeverity.Information,
-          range: new Range(2, 0, 2, 24),
+          range: new Range(2, 0, 2, todoItem.length),
         },
       ]);
     });
@@ -644,22 +629,22 @@ describe("Skipping diagnostics", () => {
       const input = [
         "<!-- moved 09/08/1997 -->",
         "01/06/1997",
-        "- [ ] Take out the trash",
+        todoItem,
         "05/06/1997",
-        "- [ ] Take out the trash",
+        todoItem,
         "09/08/1997",
-        "- [ ] Take out the trash",
+        todoItem,
       ].join("\n");
 
       assertResult(input, [
         // The moved line should not be highlighted. The highlighted one is the one that is not moved.
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(3, 0, 3, 10),
+          range: new Range(3, 0, 3, datePattern.length),
         },
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(4, 0, 4, 24),
+          range: new Range(4, 0, 4, todoItem.length),
         },
       ]);
     });
@@ -668,29 +653,29 @@ describe("Skipping diagnostics", () => {
       const input = [
         "<!-- moved 09/06/1997 -->",
         "01/06/1997",
-        "- [ ] Take out the trash",
+        todoItem,
         "05/06/1997",
-        "- [ ] Take out the trash",
+        todoItem,
         "09/06/1997",
-        "- [ ] Take out the trash",
+        todoItem,
       ].join("\n");
 
       assertResult(input, [
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(3, 0, 3, 10),
+          range: new Range(3, 0, 3, datePattern.length),
         },
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(4, 0, 4, 24),
+          range: new Range(4, 0, 4, todoItem.length),
         },
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(5, 0, 5, 10),
+          range: new Range(5, 0, 5, datePattern.length),
         },
         {
           severity: DiagnosticSeverity.Error,
-          range: new Range(6, 0, 6, 24),
+          range: new Range(6, 0, 6, todoItem.length),
         },
       ]);
     });
@@ -699,10 +684,10 @@ describe("Skipping diagnostics", () => {
       const input = [
         "<!-- moved 09/10/1997 -->",
         "07/10/1997",
-        "- [ ] Take out the trash",
+        todoItem,
         "- [ ] Take out the trash 2",
         "08/10/1997",
-        "- [ ] Take out the trash",
+        todoItem,
         "09/10/1997",
         "- [ ] Take out the trash 3",
       ].join("\n");
@@ -714,7 +699,7 @@ describe("Skipping diagnostics", () => {
         },
         {
           severity: DiagnosticSeverity.Information,
-          range: new Range(2, 0, 2, 24),
+          range: new Range(2, 0, 2, todoItem.length),
         },
         {
           severity: DiagnosticSeverity.Information,
@@ -730,7 +715,7 @@ describe("Skipping diagnostics", () => {
         "- [x] Take out the trash",
         "- [ ] Take out the trash 2",
         "08/10/1997",
-        "- [ ] Take out the trash",
+        todoItem,
         "09/10/1997",
         "- [ ] Take out the trash 2",
       ].join("\n");
@@ -742,7 +727,7 @@ describe("Skipping diagnostics", () => {
       const input = [
         "<!-- moved 09/10/1997 -->",
         "07/10/1997",
-        "- [ ] Take out the trash",
+        todoItem,
         "- [ ] Take out the trash 2",
         "09/10/1997",
         "- [x] Take out the trash 2",
@@ -755,17 +740,15 @@ describe("Skipping diagnostics", () => {
         },
         {
           severity: DiagnosticSeverity.Information,
-          range: new Range(2, 0, 2, 24),
+          range: new Range(2, 0, 2, todoItem.length),
         },
       ]);
     });
 
     test("Moved with date - invalid syntax", () => {
-      const input = [
-        "<!-- moved01/06/1997 -->",
-        "01/09/1997",
-        "- [ ] Take out the trash",
-      ].join("\n");
+      const input = ["<!-- moved01/06/1997 -->", "01/09/1997", todoItem].join(
+        "\n"
+      );
 
       assertResult(input, []);
     });

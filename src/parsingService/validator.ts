@@ -67,9 +67,11 @@ export abstract class DeclarativeValidator {
   protected readonly _timeValidator: CharValidator[] = [
     this._isDigit,
     this._isDigit,
+    (ch) => ch === CharacterCodes.h,
     (ch) => ch === CharacterCodes.colon,
     this._isDigit,
     this._isDigit,
+    (ch) => ch === CharacterCodes.m,
   ];
 
   protected _isDigit(ch: number): boolean {

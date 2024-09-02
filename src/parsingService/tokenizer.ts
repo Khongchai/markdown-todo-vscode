@@ -119,27 +119,29 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
   }
 
   private _handleDateOrTime(s: string): Token.time | Token.date | null {
-    const charCode = s.charCodeAt(this._cursor.pos + 2);
-    if (charCode === CharacterCodes.colon) {
+    const slashPos = 2;
+    const colonPos = 3;
+    const possibleSlash = s.charCodeAt(this._cursor.pos + slashPos);
+    const possibleColon = s.charCodeAt(this._cursor.pos + colonPos);
+    if (possibleColon === CharacterCodes.colon) {
       const text = this._useValidator(s, this._timeValidator);
       if (text) {
         this._text = text;
         return Token.time;
-      } else {
-        return null;
       }
-    } else if (charCode === CharacterCodes.slash) {
+      return null;
+    } else if (possibleSlash === CharacterCodes.slash) {
       const text = this._useValidator(s, this._dateValidator);
       if (text) {
         this._text = text;
         return Token.date;
-      } else {
-        return null;
       }
+      return null;
     }
 
-    this._cursor.pos += 2;
-    this._cursor.lineOffset += 2;
+    const forward = Math.min(slashPos, colonPos);
+    this._cursor.pos += forward;
+    this._cursor.lineOffset += forward;
     return null;
   }
 

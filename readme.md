@@ -4,14 +4,19 @@ This extension adds a simple **deadline** functionality to markdown lists. Simpl
 
 If the deadline is approaching, you get a squiggly line under the date. The remaining days are always appended to the end of the dates' line.
 
+You can also add times above any group of lists for more granular control. Each timed sections are evaluated separately.
+
 # **Adding a Deadline Section**
 
 ```md
-<!-- "Today" is 08/01/2023 -->
-22/07/2023
-- [ ] Turn in math homework
+<!-- "Today" is 02/09/2024 20:00 PM -->
+# 22/07/2023
+## 19:00
+- [ ] Turn in math homework 
+## 21:00
 - [ ] Learn German
-27/07/2023
+# 27/07/2023
+_No time, this defaults to 23:59:59 of a given day_
 - [ ] Turn in English homework
 - [ ] Learn French
 ```
@@ -89,24 +94,6 @@ If you want to skip a section for whatever reasons -- maybe you got lazy and wan
 - [ ] Task1
 - [ ] Task2
 ```
-
-# Moving a Section
-
-This is a bit different from skipping. This is a bit better. Instead of not doing it at all, you are `procrastinating`. 
-
-Add  `<!-- moved 20/03/2023 -->` before the section you want to move. The parser will take not of that section and will complain if the date you moved to does not exist.
-
-This works across all markdown files.
-
-**Moving must be done with the exact syntax. The two examples below show the top section moving its items to the bottom, while the bottom move its items with an incorrect syntax (nothing happens).**
-
-## All Items Moved
-
-![All items moved](assets/all-items-moved.png)
-
-## Some Items Moved
-
-![Some items moved](assets/some-items-moved.png)
 
 
 # Full Example (2 files)

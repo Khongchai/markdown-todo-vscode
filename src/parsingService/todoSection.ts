@@ -200,7 +200,6 @@ export class DeadlineSection {
       // if the item is not found to be in the requestee, then it has not been moved successfully.
       itemsNotDeposited.push(item);
     }
-
     // In the happy path, the length of the itemsNotDeposited array should be 0.
     this._items = itemsNotDeposited;
   }

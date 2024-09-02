@@ -33,11 +33,12 @@ test.each([
   runTest(raw, expected);
 });
 
+// time must be in the format HH:MM with nothing other than white spaces around it
 test.each([
-  { raw: "15:20", expected: [Token.time, Token.lineEnd] },
-  { raw: "00:00", expected: [Token.time, Token.lineEnd] },
+  { raw: "15h:20m", expected: [Token.time, Token.lineEnd] },
+  { raw: "00h:00m", expected: [Token.time, Token.lineEnd] },
   {
-    raw: "23:59  01:00",
+    raw: "23h:59m  01h:00m",
     expected: [Token.time, Token.time, Token.lineEnd],
   },
 ])(`Match time token: %j case`, ({ raw, expected }) => {
@@ -46,20 +47,20 @@ test.each([
 
 test.each([
   {
-    raw: "01/08/1997 15:20",
+    raw: "01/08/1997 15h:20m",
     expected: [Token.date, Token.time, Token.lineEnd],
   },
   {
-    raw: "01/06/1997 23:59  01:00",
+    raw: "01/06/1997 23h:59m  01h:00m",
     expected: [Token.date, Token.time, Token.time, Token.lineEnd],
   },
   {
     raw: [
       "01/06/1997",
       "- [ ] Something",
-      "13:00",
+      "13h:00m",
       "- [ ] Something else",
-      "02/06/1997 13:00",
+      "02/06/1997 13h:00m",
       "- [ ] Something",
     ].join("\n"),
     expected: [
@@ -86,13 +87,18 @@ test.each([
   { raw: "01/088/1997", expected: [Token.lineEnd] },
   { raw: "018/08/1997", expected: [Token.lineEnd] },
   { raw: "01/08/19979", expected: [Token.date, Token.lineEnd] },
-  { raw: "10:500", expected: [Token.time, Token.lineEnd] },
+  { raw: "10h:50m0", expected: [Token.time, Token.lineEnd] },
+  { raw: "_10h:50m_", expected: [Token.time, Token.lineEnd] },
   {
     raw: "1:50",
     expected: [Token.lineEnd],
   },
   {
     raw: "10:5",
+    expected: [Token.lineEnd],
+  },
+  {
+    raw: "10:50",
     expected: [Token.lineEnd],
   },
 ])(`Invalid date or time: %j case`, ({ raw, expected }) => {

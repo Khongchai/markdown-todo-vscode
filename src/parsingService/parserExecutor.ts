@@ -425,9 +425,10 @@ export class DiagnosticsParser {
    * otherwise use now from `new Date()`.
    */
   private _getDateFromTime(timeString: string): Date {
+    // pattern is nnh:nnm
     const [hour, minute] = timeString.split(":");
-    let parsedHour = Number(hour);
-    let parsedMinute = Number(minute);
+    let parsedHour = Number(hour.substring(0, 2));
+    let parsedMinute = Number(minute.substring(0, 2));
     if (Number.isNaN(parsedHour) || Number.isNaN(parsedMinute)) {
       parsedHour = 0;
       parsedMinute = 0;
