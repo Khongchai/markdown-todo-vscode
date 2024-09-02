@@ -16,7 +16,8 @@ export function activate(context: vscode.ExtensionContext) {
         const endSectionCompletion = new vscode.CompletionItem(
           "<!-- end section -->"
         );
-        return [endSectionCompletion];
+        const skipCompletion = new vscode.CompletionItem("<!-- skip -->");
+        return [endSectionCompletion, skipCompletion];
       },
     }),
     vscode.workspace.onDidCloseTextDocument((e) =>
@@ -25,6 +26,12 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       if (!editor) return;
       diagnosticsRunner.update(editor.document);
+    }),
+    vscode.window.onDidChangeWindowState((windowState) => {
+      if (windowState.focused && vscode.window.activeTextEditor) {
+        // this is to udpate the time
+        diagnosticsRunner.update(vscode.window.activeTextEditor.document);
+      }
     })
   );
 
