@@ -139,6 +139,15 @@ export class DiagnosticsTokenizer extends DeclarativeValidator {
       return null;
     }
 
+    const nextIsLineBreak = this._isLineBreak(
+      s.charCodeAt(this._cursor.pos + 1)
+    );
+    if (nextIsLineBreak) {
+      this._cursor.pos++;
+      this._cursor.lineOffset++;
+      return null;
+    }
+
     const forward = Math.min(slashPos, colonPos);
     this._cursor.pos += forward;
     this._cursor.lineOffset += forward;

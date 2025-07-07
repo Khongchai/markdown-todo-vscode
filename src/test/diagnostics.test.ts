@@ -1,10 +1,10 @@
 import { DiagnosticSeverity, Range } from "vscode";
-import { DiagnosticsParser } from "../parsingService/parserExecutor";
 import {
   dateAndTimePattern,
   datePattern,
   timePattern,
 } from "../parsingService/constants";
+import { DiagnosticsParser } from "../parsingService/parserExecutor";
 
 const todoItem = "- [ ] Take out the trash";
 
@@ -796,6 +796,41 @@ describe("Skipping diagnostics", () => {
       );
 
       assertResult(input, []);
+    });
+  });
+
+  describe("Edge cases", () => {
+    test("When another line starts with a single digit number, the date starts at the wrong position", () => {
+      const date = "# 01/10/1990";
+      const text = "- [ ] lksjdflkjsdf";
+      const input = ["2", date, text].join("\n");
+
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(1, 2, 1, date.length),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(2, 0, 2, text.length),
+        },
+      ]);
+    });
+    test("When another line starts with an odd number of digits, the date starts at the wrong position", () => {
+      const date = "# 01/10/1990";
+      const text = "- [ ] lksjdflkjsdf";
+      const input = ["hello 222", date, text].join("\n");
+
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(1, 2, 1, date.length),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(2, 0, 2, text.length),
+        },
+      ]);
     });
   });
 });
