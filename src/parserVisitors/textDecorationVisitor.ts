@@ -27,7 +27,9 @@ function addDecoration(...args: Parameters<DateParsedEvent>) {
           margin: "0 0 0 3em",
           contentText: (() => {
             if (section.getOrigin() === "time") return;
-            const dayName = `(${section
+            const isToday = DateUtil.isToday(section.getDate());
+            let dayName = isToday ? "Today " : "";
+            dayName += `(${section
               .getDate()
               .toLocaleDateString("en-US", { weekday: "long" })}) `;
             if (!section.hasItems) {
