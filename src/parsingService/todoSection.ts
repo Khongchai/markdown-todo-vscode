@@ -1,8 +1,8 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
-import { DaySettings, ReportedDiagnostic, SectionMoveDetail } from "./types";
 import { messages } from "./constants";
-import { ParsedItem } from "./parsedItem";
 import DateUtil from "./dateUtils";
+import { ParsedItem } from "./parsedItem";
+import { DaySettings, ReportedDiagnostic, SectionMoveDetail } from "./types";
 
 interface SkipSwitch {
   /**
@@ -154,9 +154,15 @@ export class DeadlineSection {
       if (this._items.length === 0) return;
       for (const item of this._items) {
         if (item.isChecked) continue;
+        const starting = item.content.length - item.content.trimStart().length;
         diagnostics.push({
           message: messages.itemNotMoved,
-          range: new Range(item.line, 0, item.line, item.content.length),
+          range: new Range(
+            item.line,
+            starting,
+            item.line,
+            item.content.length + starting
+          ),
           severity: DiagnosticSeverity.Information,
         });
       }
@@ -167,8 +173,13 @@ export class DeadlineSection {
 
     for (const item of this._items) {
       if (item.isChecked) continue;
-      // We report diagnostics error at the entire todo line.
-      const range = new Range(item.line, 0, item.line, item.content.length);
+      // We report diagnostics error at the first non-whitespace char.
+      const range = new Range(
+        item.line,
+        item.lineOffset,
+        item.line,
+        item.lineOffset + item.content.length
+      );
       diagnostics.push({
         range,
         message: this._dateDiagnosticRange.message,
@@ -185,12 +196,17 @@ export class DeadlineSection {
     this._date.instance = date;
   }
 
-  public addTodoItem(item: string, line: number, isChecked: boolean) {
+  public addTodoItem(
+    item: string,
+    lineOffset: number,
+    line: number,
+    isChecked: boolean
+  ) {
     // If we haven't seen any unfinished items yet, and this item is unfinished, then we have seen an unfinished item.
     if (this._containsUnfinishedItems === undefined && !isChecked) {
       this._containsUnfinishedItems = true;
     }
-    const newItem = new ParsedItem(item, line, isChecked);
+    const newItem = new ParsedItem(item, line, lineOffset, isChecked);
     this._items.push(newItem);
     this._contentSet.add(newItem.getListContent());
   }

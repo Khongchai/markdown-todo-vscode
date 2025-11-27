@@ -246,6 +246,7 @@ export class DiagnosticsParser {
               .getLast()
               .addTodoItem(
                 this._tokenizer.getText(),
+                this._tokenizer.getLineOffset(),
                 this._tokenizer.getLine(),
                 true
               );
@@ -258,6 +259,8 @@ export class DiagnosticsParser {
               .getLast()
               .addTodoItem(
                 this._tokenizer.getText(),
+                this._tokenizer.getLineOffset() -
+                  this._tokenizer.getText().trimStart().length,
                 this._tokenizer.getLine(),
                 false
               );

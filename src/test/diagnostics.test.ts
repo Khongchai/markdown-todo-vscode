@@ -800,6 +800,22 @@ describe("Skipping diagnostics", () => {
   });
 
   describe("Edge cases", () => {
+    test("Should start at the correct place if beginning is a whitespace or a tab", () => {
+      const date = "# 01/10/1990";
+      const text = " - [ ] lksjdflkjsdf";
+      const input = [date, text].join("\n");
+
+      assertResult(input, [
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(0, 2, 0, date.length),
+        },
+        {
+          severity: DiagnosticSeverity.Error,
+          range: new Range(1, 1, 1, text.length),
+        },
+      ]);
+    });
     test("When another line starts with a single digit number, the date starts at the wrong position", () => {
       const date = "# 01/10/1990";
       const text = "- [ ] lksjdflkjsdf";
