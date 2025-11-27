@@ -154,14 +154,13 @@ export class DeadlineSection {
       if (this._items.length === 0) return;
       for (const item of this._items) {
         if (item.isChecked) continue;
-        const starting = item.content.length - item.content.trimStart().length;
         diagnostics.push({
           message: messages.itemNotMoved,
           range: new Range(
             item.line,
-            starting,
+            item.lineStartOffset,
             item.line,
-            item.content.length + starting
+            item.lineStartOffset + item.content.length
           ),
           severity: DiagnosticSeverity.Information,
         });
@@ -176,9 +175,9 @@ export class DeadlineSection {
       // We report diagnostics error at the first non-whitespace char.
       const range = new Range(
         item.line,
-        item.lineOffset,
+        item.lineStartOffset,
         item.line,
-        item.lineOffset + item.content.length
+        item.lineStartOffset + item.content.length
       );
       diagnostics.push({
         range,

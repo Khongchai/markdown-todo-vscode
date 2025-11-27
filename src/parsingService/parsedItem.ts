@@ -3,7 +3,7 @@ export class ParsedItem {
   public line: number;
   // - [ ] or - [x] || - [X]
   public isChecked: boolean;
-  public lineOffset: number;
+  public lineStartOffset: number;
 
   public constructor(
     content: string,
@@ -13,7 +13,7 @@ export class ParsedItem {
   ) {
     this.content = content;
     this.line = line;
-    this.lineOffset = lineOffset;
+    this.lineStartOffset = lineOffset;
     this.isChecked = isChecked;
   }
 
